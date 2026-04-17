@@ -1,6 +1,9 @@
 const API_URL = '/entries';
 let allEntries = [];
 let editingId = null;
+let activeFilter = null; // tracks the active phase filter tag
+
+const STANDARD_PHASES = ['URS', 'FAT', 'SAT', 'IQ', 'OQ', 'PQ'];
 
 // DOM Elements
 const grid = document.getElementById('entries-grid');
@@ -40,7 +43,7 @@ function renderEntries(entries) {
                     <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
                 </div>
             </div>
-            <div class="project-name">${entry.project_name}</div>
+            <div class="project-name">${entry.project_name} | <span class="consultant-name">${entry.consultant}</span></div>
             
             <div class="card-body">
                 <h4>Obstacle</h4>
@@ -88,6 +91,7 @@ function editEntry(id) {
     
     // Fill form
     document.getElementById('project_name').value = entry.project_name;
+    document.getElementById('consultant').value = entry.consultant;
     document.getElementById('equipment_system').value = entry.equipment_system;
     document.getElementById('validation_phase').value = entry.validation_phase;
     document.getElementById('intended_outcome').value = entry.intended_outcome;
@@ -104,12 +108,27 @@ function editEntry(id) {
 // Search & Filter Logic
 function handleSearch() {
     const query = searchInput.value.toLowerCase();
-    const filtered = allEntries.filter(entry => 
-        entry.equipment_system.toLowerCase().includes(query) ||
-        entry.project_name.toLowerCase().includes(query) ||
-        entry.keywords.some(kw => kw.toLowerCase().includes(query)) ||
-        entry.obstacle.toLowerCase().includes(query)
-    );
+
+    const filtered = allEntries.filter(entry => {
+        // Text search across multiple fields
+        const matchesText = !query ||
+            entry.equipment_system.toLowerCase().includes(query) ||
+            entry.project_name.toLowerCase().includes(query) ||
+            entry.keywords.some(kw => kw.toLowerCase().includes(query)) ||
+            entry.obstacle.toLowerCase().includes(query) ||
+            entry.validation_phase.toLowerCase().includes(query);
+
+        // Phase filter tag
+        let matchesPhase = true;
+        if (activeFilter === 'Others') {
+            matchesPhase = !STANDARD_PHASES.includes(entry.validation_phase);
+        } else if (activeFilter) {
+            matchesPhase = entry.validation_phase === activeFilter;
+        }
+
+        return matchesText && matchesPhase;
+    });
+
     renderEntries(filtered);
 }
 
@@ -130,6 +149,7 @@ form.onsubmit = async (e) => {
     
     const formData = {
         project_name: document.getElementById('project_name').value,
+        consultant: document.getElementById('consultant').value,
         equipment_system: document.getElementById('equipment_system').value,
         validation_phase: document.getElementById('validation_phase').value,
         intended_outcome: document.getElementById('intended_outcome').value,
@@ -166,7 +186,17 @@ form.onsubmit = async (e) => {
 filterTags.forEach(tag => {
     tag.onclick = () => {
         const filter = tag.getAttribute('data-filter');
-        searchInput.value = filter;
+
+        if (activeFilter === filter) {
+            // Clicking the same tag again clears the filter
+            activeFilter = null;
+            tag.classList.remove('active');
+        } else {
+            activeFilter = filter;
+            filterTags.forEach(t => t.classList.remove('active'));
+            tag.classList.add('active');
+        }
+
         handleSearch();
     };
 });

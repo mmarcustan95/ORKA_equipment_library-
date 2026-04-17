@@ -43,6 +43,7 @@ class GraphConnector:
                 obstacle=fields.get("ObstacleEncountered", ""),
                 resolution=fields.get("ResolutionLearning", ""),
                 date_logged=fields.get("DateLogged"),
+                consultant=fields.get("Consultant", ""),
                 keywords=fields.get("Keywords", "").split(", ") if fields.get("Keywords") else []
             ))
         return entries
@@ -68,6 +69,7 @@ class GraphConnector:
                 "ObstacleEncountered": entry.obstacle,
                 "ResolutionLearning": entry.resolution,
                 "DateLogged": entry.date_logged.isoformat(),
+                "Consultant": entry.consultant,
                 "Keywords": ", ".join(entry.keywords)
             }
         }

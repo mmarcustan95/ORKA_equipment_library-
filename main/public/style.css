@@ -140,7 +140,8 @@ body {
     cursor: pointer;
 }
 
-.filter-tag:hover, .filter-tag.active {
+.filter-tag:hover,
+.filter-tag.active {
     border-color: var(--accent);
     color: var(--accent);
 }
@@ -181,19 +182,52 @@ body {
     gap: 0.8rem;
 }
 
+.btn-edit,
 .btn-delete {
-    background: none;
-    border: none;
+    background: transparent;
+    border: 1px solid transparent;
     color: var(--text-secondary);
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     cursor: pointer;
     line-height: 1;
-    transition: color 0.2s;
-    padding: 0 0.2rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease,
+        border-color 0.2s ease, transform 0.15s ease,
+        box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit {
+    font-size: 1.2rem;
+    padding: 0.4rem 0.65rem;
+    color: var(--accent);
+    background: rgba(56, 189, 248, 0.06);
+    border-color: rgba(56, 189, 248, 0.25);
+}
+
+.btn-edit:hover {
+    color: #fff;
+    background: rgba(56, 189, 248, 0.18);
+    border-color: rgba(56, 189, 248, 0.6);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+    transform: translateY(-2px);
 }
 
 .btn-delete:hover {
     color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.35);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-edit:active,
+.btn-delete:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 
@@ -329,7 +363,9 @@ label {
     color: var(--text-secondary);
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
     width: 100%;
     background: var(--bg-dark);
     border: 1px solid var(--border);
@@ -339,7 +375,9 @@ input, select, textarea {
     outline: none;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
     border-color: var(--accent);
 }
 

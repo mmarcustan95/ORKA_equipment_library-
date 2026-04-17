@@ -38,6 +38,7 @@ class LocalDatabase:
                         project_name TEXT,
                         equipment_system TEXT,
                         validation_phase TEXT,
+                        consultant TEXT,
                         intended_outcome TEXT,
                         obstacle TEXT,
                         resolution TEXT,
@@ -68,6 +69,7 @@ class LocalDatabase:
                     project_name=row["project_name"],
                     equipment_system=row["equipment_system"],
                     validation_phase=row["validation_phase"],
+                    consultant=row["consultant"] if row["consultant"] else "",
                     intended_outcome=row["intended_outcome"],
                     obstacle=row["obstacle"],
                     resolution=row["resolution"],
@@ -86,14 +88,15 @@ class LocalDatabase:
             with conn:
                 cur = conn.cursor()
                 cur.execute(f"""
-                    INSERT INTO entries (id, project_name, equipment_system, validation_phase, 
+                    INSERT INTO entries (id, project_name, equipment_system, validation_phase, consultant,
                                        intended_outcome, obstacle, resolution, date_logged, attachments, keywords)
-                    VALUES ({','.join([placeholder]*10)})
+                    VALUES ({','.join([placeholder]*11)})
                 """, (
                     str(entry.id),
                     entry.project_name,
                     entry.equipment_system,
                     entry.validation_phase,
+                    entry.consultant,
                     entry.intended_outcome,
                     entry.obstacle,
                     entry.resolution,
@@ -127,6 +130,7 @@ class LocalDatabase:
                         project_name = {placeholder}, 
                         equipment_system = {placeholder}, 
                         validation_phase = {placeholder}, 
+                        consultant = {placeholder}, 
                         intended_outcome = {placeholder}, 
                         obstacle = {placeholder}, 
                         resolution = {placeholder}, 
@@ -138,6 +142,7 @@ class LocalDatabase:
                     entry.project_name,
                     entry.equipment_system,
                     entry.validation_phase,
+                    entry.consultant,
                     entry.intended_outcome,
                     entry.obstacle,
                     entry.resolution,

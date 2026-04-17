@@ -33,9 +33,13 @@
                 placeholder="Search by equipment, project, or keyword (e.g. Centrifuge)...">
             <div class="filters">
                 <span class="filter-label">Quick Filters:</span>
+                <button class="filter-tag" data-filter="URS">URS</button>
+                <button class="filter-tag" data-filter="FAT">FAT</button>
+                <button class="filter-tag" data-filter="SAT">SAT</button>
+                <button class="filter-tag" data-filter="IQ">IQ</button>
                 <button class="filter-tag" data-filter="OQ">OQ</button>
                 <button class="filter-tag" data-filter="PQ">PQ</button>
-                <button class="filter-tag" data-filter="FAT">FAT</button>
+                <button class="filter-tag" data-filter="Others">Others</button>
             </div>
         </section>
 
@@ -54,6 +58,10 @@
                 <div class="form-group">
                     <label for="project_name">Project Name</label>
                     <input type="text" id="project_name" required placeholder="e.g. Project Alpha - BioPharma">
+                </div>
+                <div class="form-group">
+                    <label for="consultant">Consultant Name</label>
+                    <input type="text" id="consultant" required placeholder="e.g. John Doe">
                 </div>
                 <div class="form-row">
                     <div class="form-group">

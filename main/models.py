@@ -9,6 +9,7 @@ class ValidationEntry(BaseModel):
     project_name: str
     equipment_system: str
     validation_phase: str
+    consultant: str
     intended_outcome: str
     obstacle: str
     resolution: str
