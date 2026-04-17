@@ -21,8 +21,10 @@ class Config:
     
     REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/docs/oauth2-redirect")
     
-    # Authority URL for Microsoft Entra ID
+    # Authority and Scopes for Sites.Selected (Application Permissions)
     AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
     SCOPE = ["https://graph.microsoft.com/.default"]
+
+
 
 config = Config()

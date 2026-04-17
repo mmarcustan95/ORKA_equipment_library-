@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORKA Equipment Knowledge Library</title>
+    <link rel="stylesheet" href="/static/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">ORKA <span>Consulting Partners</span></div>
+            <div class="nav-links">
+                <button id="add-entry-btn" class="btn-primary">+ Log New Lesson</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="page-header">
+            <h1>Equipment Validation Knowledge</h1>
+            <p>Institutional knowledge from the shop floor to the cloud.</p>
+        </header>
+
+        <section class="search-section">
+            <input type="text" id="search-input" placeholder="Search by equipment, project, or keyword (e.g. Centrifuge)...">
+            <div class="filters">
+                <span class="filter-label">Quick Filters:</span>
+                <button class="filter-tag" data-filter="OQ">OQ</button>
+                <button class="filter-tag" data-filter="PQ">PQ</button>
+                <button class="filter-tag" data-filter="FAT">FAT</button>
+            </div>
+        </section>
+
+        <section id="entries-grid" class="entries-grid">
+            <!-- Entries will be injected here by JavaScript -->
+            <div class="loader">Loading institutional knowledge...</div>
+        </section>
+    </main>
+
+    <!-- Modal for Adding New Entry -->
+    <div id="entry-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Log Validation Lesson Learned</h2>
+            <form id="entry-form">
+                <div class="form-group">
+                    <label for="project_name">Project Name</label>
+                    <input type="text" id="project_name" required placeholder="e.g. Project Alpha - BioPharma">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="equipment_system">Equipment/System</label>
+                        <input type="text" id="equipment_system" required placeholder="e.g. Centrifuge C-102">
+                    </div>
+                    <div class="form-group">
+                        <label for="validation_phase">Validation Phase</label>
+                        <select id="validation_phase" required>
+                            <option value="URS">URS</option>
+                            <option value="FAT">FAT</option>
+                            <option value="SAT">SAT</option>
+                            <option value="IQ">IQ</option>
+                            <option value="OQ">OQ</option>
+                            <option value="PQ">PQ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="intended_outcome">Intended Outcome</label>
+                    <textarea id="intended_outcome" required rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="obstacle">Obstacle Encountered</label>
+                    <textarea id="obstacle" required rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="resolution">Resolution / Learning</label>
+                    <textarea id="resolution" required rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date_logged">Date Logged</label>
+                        <input type="date" id="date_logged" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="keywords">Keywords (comma separated)</label>
+                        <input type="text" id="keywords" placeholder="vibration, logic, sensor">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Submit to Knowledge Library</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

@@ -11,13 +11,14 @@ def get_access_token():
         raise Exception("CLIENT_ID is missing or still set to placeholder in .env!")
 
         
-    app = msal.ConfidentialClientApplication(
+    app = msal.PublicClientApplication(
         config.CLIENT_ID,
-        authority=config.AUTHORITY,
-        client_credential=config.CLIENT_SECRET,
+        authority=config.AUTHORITY
     )
+    
+    # This will open a browser window for you to sign in
+    result = app.acquire_token_interactive(scopes=config.SCOPE)
 
-    result = app.acquire_token_for_client(scopes=config.SCOPE)
     if "access_token" in result:
         return result["access_token"]
     else:
