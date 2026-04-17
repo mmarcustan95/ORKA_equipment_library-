@@ -32,3 +32,5 @@ coverage.xml
 # macOS / Windows junk files
 .DS_Store
 Thumbs.db
+# Database
+*.db
