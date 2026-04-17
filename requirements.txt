@@ -4,3 +4,4 @@ httpx
 msal
 python-dotenv
 pydantic
+psycopg2-binary
