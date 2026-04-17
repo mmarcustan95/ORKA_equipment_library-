@@ -3,11 +3,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from typing import List
 from main.models import ValidationEntry
+from main.dummy import db
 
 app = FastAPI(title="ORKA Equipment Knowledge Library")
 
-# In-memory storage for Stage 1 (will be replaced by SharePoint List in Stage 2)
-db: List[ValidationEntry] = []
+from datetime import date
+from uuid import UUID
 
 @app.get("/", tags=["Health"])
 async def root():
