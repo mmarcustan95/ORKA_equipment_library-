@@ -30,6 +30,16 @@ async def create_entry(entry: ValidationEntry):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/entries/{entry_id}", tags=["Entries"])
+async def delete_entry(entry_id: str):
+    """Delete a validation lesson learned from the LOCAL TEST database."""
+    try:
+        test_db.delete_entry(entry_id)
+        return {"message": "Entry deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Optional: Mount static files
 if os.path.exists("main/public"):
     app.mount("/static", StaticFiles(directory="main/public"), name="static")

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import List
+from typing import List, Optional
 from uuid import uuid4, UUID
 
 class ValidationEntry(BaseModel):
@@ -13,6 +13,7 @@ class ValidationEntry(BaseModel):
     obstacle: str
     resolution: str
     date_logged: date
+    attachments: Optional[str] = ""
     keywords: List[str] = []
 
     class Config:

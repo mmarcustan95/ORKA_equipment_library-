@@ -32,7 +32,10 @@ function renderEntries(entries) {
         <article class="card">
             <div class="card-header">
                 <h3 class="equipment-name">${entry.equipment_system}</h3>
-                <span class="phase-badge">${entry.validation_phase}</span>
+                <div class="header-actions">
+                    <span class="phase-badge">${entry.validation_phase}</span>
+                    <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
+                </div>
             </div>
             <div class="project-name">${entry.project_name}</div>
             
@@ -48,6 +51,7 @@ function renderEntries(entries) {
             
             <div class="card-footer">
                 <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
+                ${entry.attachments ? `<a href="${entry.attachments}" target="_blank" class="attachment-link">📎 View Files</a>` : ''}
                 <div class="keywords-list">
                     ${entry.keywords.map(kw => `<span class="keyword-pill">${kw}</span>`).join('')}
                 </div>
@@ -55,6 +59,22 @@ function renderEntries(entries) {
         </article>
     `).join('');
 }
+
+// Global Delete Function
+async function deleteEntry(id) {
+    if (!confirm('Are you sure you want to delete this validation lesson? This cannot be undone.')) return;
+    
+    try {
+        const response = await fetch(`/entries/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            loadEntries(); // Refresh the grid
+        }
+    } catch (error) {
+        console.error('Error deleting entry:', error);
+        alert('Failed to delete entry.');
+    }
+}
+
 
 // Search & Filter Logic
 function handleSearch() {
@@ -85,7 +105,9 @@ form.onsubmit = async (e) => {
         obstacle: document.getElementById('obstacle').value,
         resolution: document.getElementById('resolution').value,
         date_logged: document.getElementById('date_logged').value,
+        attachments: document.getElementById('attachments').value,
         keywords: document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k !== "")
+
     };
 
     try {
