@@ -30,6 +30,14 @@ async def create_entry(entry: ValidationEntry):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/entries/{entry_id}", response_model=ValidationEntry, tags=["Entries"])
+async def update_entry(entry_id: str, entry: ValidationEntry):
+    """Update an existing validation lesson in the database."""
+    try:
+        return test_db.update_entry(entry_id, entry)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/entries/{entry_id}", tags=["Entries"])
 async def delete_entry(entry_id: str):
     """Delete a validation lesson learned from the LOCAL TEST database."""

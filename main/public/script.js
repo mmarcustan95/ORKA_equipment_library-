@@ -1,10 +1,12 @@
 const API_URL = '/entries';
 let allEntries = [];
+let editingId = null;
 
 // DOM Elements
 const grid = document.getElementById('entries-grid');
 const searchInput = document.getElementById('search-input');
 const modal = document.getElementById('entry-modal');
+const modalTitle = modal.querySelector('h2');
 const addBtn = document.getElementById('add-entry-btn');
 const closeBtn = document.querySelector('.close-modal');
 const form = document.getElementById('entry-form');
@@ -34,6 +36,7 @@ function renderEntries(entries) {
                 <h3 class="equipment-name">${entry.equipment_system}</h3>
                 <div class="header-actions">
                     <span class="phase-badge">${entry.validation_phase}</span>
+                    <button class="btn-edit" onclick="editEntry('${entry.id}')" title="Edit Entry">✎</button>
                     <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
                 </div>
             </div>
@@ -75,6 +78,28 @@ async function deleteEntry(id) {
     }
 }
 
+// Global Edit Function
+function editEntry(id) {
+    const entry = allEntries.find(e => e.id === id);
+    if (!entry) return;
+
+    editingId = id;
+    modalTitle.textContent = 'Edit Validation Lesson';
+    
+    // Fill form
+    document.getElementById('project_name').value = entry.project_name;
+    document.getElementById('equipment_system').value = entry.equipment_system;
+    document.getElementById('validation_phase').value = entry.validation_phase;
+    document.getElementById('intended_outcome').value = entry.intended_outcome;
+    document.getElementById('obstacle').value = entry.obstacle;
+    document.getElementById('resolution').value = entry.resolution;
+    document.getElementById('date_logged').value = entry.date_logged;
+    document.getElementById('attachments').value = entry.attachments || '';
+    document.getElementById('keywords').value = entry.keywords.join(', ');
+
+    modal.style.display = 'block';
+}
+
 
 // Search & Filter Logic
 function handleSearch() {
@@ -89,7 +114,13 @@ function handleSearch() {
 }
 
 // Modal Toggle
-addBtn.onclick = () => modal.style.display = 'block';
+addBtn.onclick = () => {
+    editingId = null;
+    modalTitle.textContent = 'Log Validation Lesson Learned';
+    form.reset();
+    modal.style.display = 'block';
+};
+
 closeBtn.onclick = () => modal.style.display = 'none';
 window.onclick = (e) => { if (e.target == modal) modal.style.display = 'none'; };
 
@@ -107,12 +138,14 @@ form.onsubmit = async (e) => {
         date_logged: document.getElementById('date_logged').value,
         attachments: document.getElementById('attachments').value,
         keywords: document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k !== "")
-
     };
 
+    const url = editingId ? `${API_URL}/${editingId}` : API_URL;
+    const method = editingId ? 'PUT' : 'POST';
+
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
+        const response = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
@@ -120,6 +153,7 @@ form.onsubmit = async (e) => {
         if (response.ok) {
             form.reset();
             modal.style.display = 'none';
+            editingId = null;
             loadEntries(); // Refresh the grid
         }
     } catch (error) {

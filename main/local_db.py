@@ -116,6 +116,40 @@ class LocalDatabase:
         finally:
             conn.close()
 
+    def update_entry(self, entry_id: str, entry: ValidationEntry):
+        conn = self._get_connection()
+        placeholder = "%s" if self.db_url else "?"
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(f"""
+                    UPDATE entries SET 
+                        project_name = {placeholder}, 
+                        equipment_system = {placeholder}, 
+                        validation_phase = {placeholder}, 
+                        intended_outcome = {placeholder}, 
+                        obstacle = {placeholder}, 
+                        resolution = {placeholder}, 
+                        date_logged = {placeholder}, 
+                        attachments = {placeholder}, 
+                        keywords = {placeholder}
+                    WHERE id = {placeholder}
+                """, (
+                    entry.project_name,
+                    entry.equipment_system,
+                    entry.validation_phase,
+                    entry.intended_outcome,
+                    entry.obstacle,
+                    entry.resolution,
+                    entry.date_logged.isoformat(),
+                    entry.attachments,
+                    json.dumps(entry.keywords),
+                    entry_id
+                ))
+            return entry
+        finally:
+            conn.close()
+
 # Singleton instance
 test_db = LocalDatabase()
 
