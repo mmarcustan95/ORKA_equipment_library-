@@ -8,6 +8,7 @@ class ValidationEntry(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     project_name: str
     equipment_system: str
+    model_number: Optional[str] = None
     validation_phase: str
     consultant: str
     intended_outcome: str

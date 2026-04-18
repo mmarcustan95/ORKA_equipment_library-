@@ -37,7 +37,7 @@ function renderEntries(entries) {
         <article class="card">
             <div class="card-header">
                 <div class="header-main">
-                    <h3 class="equipment-name">${entry.equipment_system}</h3>
+                    <h3 class="equipment-name">${entry.equipment_system} ${entry.model_number ? `<span style="font-size: 0.9rem; font-weight: 300; opacity: 0.7; margin-left: 0.5rem;">(${entry.model_number})</span>` : ''}</h3>
                     <div class="project-name">${entry.project_name} | <span class="consultant-name" style="color: var(--text-primary); font-weight: 500;">${entry.consultant}</span></div>
                 </div>
                 <div class="header-actions">
@@ -104,6 +104,7 @@ function editEntry(id) {
     document.getElementById('project_name').value = entry.project_name;
     document.getElementById('consultant').value = entry.consultant;
     document.getElementById('equipment_system').value = entry.equipment_system;
+    document.getElementById('model_number').value = entry.model_number || '';
     document.getElementById('validation_phase').value = entry.validation_phase;
     document.getElementById('intended_outcome').value = entry.intended_outcome;
     document.getElementById('obstacle').value = entry.obstacle;
@@ -124,6 +125,7 @@ function handleSearch() {
         // Text search across multiple fields
         const matchesText = !query ||
             entry.equipment_system.toLowerCase().includes(query) ||
+            (entry.model_number && entry.model_number.toLowerCase().includes(query)) ||
             entry.project_name.toLowerCase().includes(query) ||
             entry.keywords.some(kw => kw.toLowerCase().includes(query)) ||
             entry.obstacle.toLowerCase().includes(query) ||
@@ -165,6 +167,7 @@ function fillForm(data) {
     document.getElementById('project_name').value = data.project_name || '';
     document.getElementById('consultant').value = data.consultant || '';
     document.getElementById('equipment_system').value = data.equipment_system || '';
+    document.getElementById('model_number').value = data.model_number || '';
     document.getElementById('validation_phase').value = data.validation_phase || 'URS';
     document.getElementById('intended_outcome').value = data.intended_outcome || '';
     document.getElementById('obstacle').value = data.obstacle || '';
@@ -182,6 +185,7 @@ form.addEventListener('input', () => {
         project_name: document.getElementById('project_name').value,
         consultant: document.getElementById('consultant').value,
         equipment_system: document.getElementById('equipment_system').value,
+        model_number: document.getElementById('model_number').value,
         validation_phase: document.getElementById('validation_phase').value,
         intended_outcome: document.getElementById('intended_outcome').value,
         obstacle: document.getElementById('obstacle').value,
@@ -219,6 +223,7 @@ form.onsubmit = async (e) => {
         project_name: document.getElementById('project_name').value,
         consultant: document.getElementById('consultant').value,
         equipment_system: document.getElementById('equipment_system').value,
+        model_number: document.getElementById('model_number').value,
         validation_phase: document.getElementById('validation_phase').value,
         intended_outcome: document.getElementById('intended_outcome').value,
         obstacle: document.getElementById('obstacle').value,

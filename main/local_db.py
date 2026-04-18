@@ -37,6 +37,7 @@ class LocalDatabase:
                         id TEXT PRIMARY KEY,
                         project_name TEXT,
                         equipment_system TEXT,
+                        model_number TEXT,
                         validation_phase TEXT,
                         consultant TEXT,
                         intended_outcome TEXT,
@@ -47,6 +48,15 @@ class LocalDatabase:
                         keywords TEXT
                     )
                 """)
+                
+                # Dynamic migration: Check if model_number exists, if not add it
+                try:
+                    cur.execute("SELECT model_number FROM entries LIMIT 1")
+                except:
+                    if self.db_url:
+                        conn.rollback() # Postgres needs rollback after error
+                        cur = conn.cursor()
+                    cur.execute("ALTER TABLE entries ADD COLUMN model_number TEXT")
         finally:
             conn.close()
 
@@ -68,6 +78,7 @@ class LocalDatabase:
                     id=row["id"],
                     project_name=row["project_name"],
                     equipment_system=row["equipment_system"],
+                    model_number=row["model_number"] if "model_number" in row.keys() and row["model_number"] else "",
                     validation_phase=row["validation_phase"],
                     consultant=row["consultant"] if row["consultant"] else "",
                     intended_outcome=row["intended_outcome"],
@@ -88,13 +99,14 @@ class LocalDatabase:
             with conn:
                 cur = conn.cursor()
                 cur.execute(f"""
-                    INSERT INTO entries (id, project_name, equipment_system, validation_phase, consultant,
+                    INSERT INTO entries (id, project_name, equipment_system, model_number, validation_phase, consultant,
                                        intended_outcome, obstacle, resolution, date_logged, attachments, keywords)
-                    VALUES ({','.join([placeholder]*11)})
+                    VALUES ({','.join([placeholder]*12)})
                 """, (
                     str(entry.id),
                     entry.project_name,
                     entry.equipment_system,
+                    entry.model_number,
                     entry.validation_phase,
                     entry.consultant,
                     entry.intended_outcome,
@@ -129,6 +141,7 @@ class LocalDatabase:
                     UPDATE entries SET 
                         project_name = {placeholder}, 
                         equipment_system = {placeholder}, 
+                        model_number = {placeholder},
                         validation_phase = {placeholder}, 
                         consultant = {placeholder}, 
                         intended_outcome = {placeholder}, 
@@ -141,6 +154,7 @@ class LocalDatabase:
                 """, (
                     entry.project_name,
                     entry.equipment_system,
+                    entry.model_number,
                     entry.validation_phase,
                     entry.consultant,
                     entry.intended_outcome,
