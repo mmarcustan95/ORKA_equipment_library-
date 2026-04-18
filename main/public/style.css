@@ -17,6 +17,11 @@
     font-family: 'Inter', sans-serif;
 }
 
+.emoji {
+    margin: 0 0.2rem;
+    vertical-align: middle;
+}
+
 body {
     background-color: var(--bg-dark);
     color: var(--text-primary);
