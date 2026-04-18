@@ -1,11 +1,11 @@
 :root {
-    --bg-dark: #0f172a;
-    --bg-card: #1e293b;
+    --bg-dark: #002D5B;
+    --bg-card: #003B75;
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --accent: #38bdf8;
-    --accent-hover: #0ea5e9;
-    --border: #334155;
+    --accent: #FFB81C;
+    --accent-hover: #E5A619;
+    --border: #1e3a8a;
     --success: #22c55e;
     --danger: #ef4444;
 }
@@ -37,7 +37,7 @@ body {
 
 /* Navbar */
 .navbar {
-    background: rgba(15, 23, 42, 0.8);
+    background: rgba(0, 45, 91, 0.8);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     padding: 1rem 0;
@@ -53,6 +53,7 @@ body {
 }
 
 .logo {
+    color: var(--accent);
     font-weight: 700;
     font-size: 1.5rem;
     letter-spacing: -1px;
@@ -106,7 +107,7 @@ body {
 .btn-secondary:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: rgba(56, 189, 248, 0.05);
+    background: rgba(255, 184, 28, 0.05);
     transform: translateY(-2px);
 }
 
@@ -239,15 +240,15 @@ body {
     font-size: 1.2rem;
     padding: 0.4rem 0.65rem;
     color: var(--accent);
-    background: rgba(56, 189, 248, 0.06);
-    border-color: rgba(56, 189, 248, 0.25);
+    background: rgba(255, 184, 28, 0.06);
+    border-color: rgba(255, 184, 28, 0.25);
 }
 
 .btn-edit:hover {
     color: #fff;
-    background: rgba(56, 189, 248, 0.18);
-    border-color: rgba(56, 189, 248, 0.6);
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+    background: rgba(255, 184, 28, 0.18);
+    border-color: rgba(255, 184, 28, 0.6);
+    box-shadow: 0 0 14px rgba(255, 184, 28, 0.3);
     transform: translateY(-2px);
 }
 
@@ -267,7 +268,7 @@ body {
 
 
 .phase-badge {
-    background: rgba(56, 189, 248, 0.1);
+    background: rgba(255, 184, 28, 0.1);
     color: var(--accent);
     padding: 0.2rem 0.6rem;
     border-radius: 6px;
