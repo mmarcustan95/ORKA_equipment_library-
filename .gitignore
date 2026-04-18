@@ -34,3 +34,7 @@ coverage.xml
 Thumbs.db
 # Database
 *.db
+
+# Scratch directory
+scratch/
+
