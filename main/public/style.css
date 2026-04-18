@@ -20,6 +20,9 @@
 .emoji {
     margin: 0 0.2rem;
     vertical-align: middle;
+    display: inline-block;
+    -webkit-text-fill-color: initial;
+    background-clip: initial;
 }
 
 body {
