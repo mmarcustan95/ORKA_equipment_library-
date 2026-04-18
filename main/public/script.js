@@ -36,31 +36,42 @@ function renderEntries(entries) {
     grid.innerHTML = entries.map(entry => `
         <article class="card">
             <div class="card-header">
-                <h3 class="equipment-name">${entry.equipment_system}</h3>
+                <div class="header-main">
+                    <h3 class="equipment-name">${entry.equipment_system}</h3>
+                    <div class="project-name">${entry.project_name} | <span class="consultant-name" style="color: var(--text-primary); font-weight: 500;">${entry.consultant}</span></div>
+                </div>
                 <div class="header-actions">
                     <span class="phase-badge">${entry.validation_phase}</span>
                     <button class="btn-edit" onclick="editEntry('${entry.id}')" title="Edit Entry">✎</button>
                     <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
                 </div>
             </div>
-            <div class="project-name">${entry.project_name} | <span class="consultant-name">${entry.consultant}</span></div>
             
             <div class="card-body">
-                <h4>Obstacle</h4>
-                <p>${entry.obstacle}</p>
+                ${entry.intended_outcome ? `
+                    <h4>Intended Outcome</h4>
+                    <p>${entry.intended_outcome}</p>
+                ` : ''}
+                
+                <div class="obstacle-box">
+                    <h4>Obstacle Encountered</h4>
+                    <p>${entry.obstacle}</p>
+                </div>
                 
                 <div class="resolution-box">
-                    <h4>Resolution</h4>
+                    <h4>Resolution / Learning</h4>
                     <p>${entry.resolution}</p>
                 </div>
             </div>
             
             <div class="card-footer">
-                <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
-                ${entry.attachments ? `<a href="${entry.attachments}" target="_blank" class="attachment-link">📎 View Files</a>` : ''}
-                <div class="keywords-list">
-                    ${entry.keywords.map(kw => `<span class="keyword-pill">${kw}</span>`).join('')}
+                <div class="footer-left">
+                    <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
+                    <div class="keywords-list">
+                        ${entry.keywords.map(kw => `<span class="keyword-pill">${kw}</span>`).join('')}
+                    </div>
                 </div>
+                ${entry.attachments ? `<a href="${entry.attachments}" target="_blank" class="attachment-link">📎 View Files</a>` : ''}
             </div>
         </article>
     `).join('');
@@ -136,12 +147,69 @@ function handleSearch() {
 addBtn.onclick = () => {
     editingId = null;
     modalTitle.textContent = 'Log Validation Lesson Learned';
-    form.reset();
+    
+    // Load draft if it exists
+    const draft = localStorage.getItem('lesson_draft');
+    if (draft) {
+        const data = JSON.parse(draft);
+        fillForm(data);
+    } else {
+        form.reset();
+        document.getElementById('date_logged').value = new Date().toISOString().split('T')[0];
+    }
+    
     modal.style.display = 'block';
 };
 
-closeBtn.onclick = () => modal.style.display = 'none';
-window.onclick = (e) => { if (e.target == modal) modal.style.display = 'none'; };
+function fillForm(data) {
+    document.getElementById('project_name').value = data.project_name || '';
+    document.getElementById('consultant').value = data.consultant || '';
+    document.getElementById('equipment_system').value = data.equipment_system || '';
+    document.getElementById('validation_phase').value = data.validation_phase || 'URS';
+    document.getElementById('intended_outcome').value = data.intended_outcome || '';
+    document.getElementById('obstacle').value = data.obstacle || '';
+    document.getElementById('resolution').value = data.resolution || '';
+    document.getElementById('date_logged').value = data.date_logged || new Date().toISOString().split('T')[0];
+    document.getElementById('attachments').value = data.attachments || '';
+    document.getElementById('keywords').value = Array.isArray(data.keywords) ? data.keywords.join(', ') : (data.keywords || '');
+}
+
+// Auto-save draft as the user types
+form.addEventListener('input', () => {
+    if (editingId) return; // Don't save drafts when editing existing entries
+    
+    const draftData = {
+        project_name: document.getElementById('project_name').value,
+        consultant: document.getElementById('consultant').value,
+        equipment_system: document.getElementById('equipment_system').value,
+        validation_phase: document.getElementById('validation_phase').value,
+        intended_outcome: document.getElementById('intended_outcome').value,
+        obstacle: document.getElementById('obstacle').value,
+        resolution: document.getElementById('resolution').value,
+        date_logged: document.getElementById('date_logged').value,
+        attachments: document.getElementById('attachments').value,
+        keywords: document.getElementById('keywords').value
+    };
+    localStorage.setItem('lesson_draft', JSON.stringify(draftData));
+});
+
+closeBtn.onclick = () => {
+    if (!editingId && formHasContent() && !confirm('You have unsaved changes. Close anyway?')) return;
+    modal.style.display = 'none';
+};
+
+// Check if form has content to prevent accidental data loss
+function formHasContent() {
+    const inputs = ['project_name', 'consultant', 'equipment_system', 'intended_outcome', 'obstacle', 'resolution'];
+    return inputs.some(id => document.getElementById(id).value.trim() !== '');
+}
+
+window.onclick = (e) => { 
+    if (e.target == modal) {
+        if (!editingId && formHasContent() && !confirm('You have unsaved changes. Close anyway?')) return;
+        modal.style.display = 'none';
+    }
+};
 
 // Form Submission
 form.onsubmit = async (e) => {
@@ -172,6 +240,7 @@ form.onsubmit = async (e) => {
 
         if (response.ok) {
             form.reset();
+            localStorage.removeItem('lesson_draft'); // Clear draft on success
             modal.style.display = 'none';
             editingId = null;
             loadEntries(); // Refresh the grid
