@@ -50,3 +50,7 @@ For a database with an 8GB limit (common for lightweight cloud tiers):
 ## Local Environment Setup
 
 1. **Clone the repository**
+
+## Issues Log
+1. issue when scrolling when using new entry card in tablet/phone mode
+2. add a summary feature for different equipment - use AI?
