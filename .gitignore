@@ -41,3 +41,6 @@ scratch/
 # Phase 2 - SharePoint Graph connector (not yet in use)
 main/graph_connector.py
 
+# Claude Code local settings
+.claude/settings.local.json
+
