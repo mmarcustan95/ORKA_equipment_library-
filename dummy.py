@@ -7,6 +7,7 @@ db: List[ValidationEntry] = [
     ValidationEntry(
         project_name="Project Alpha - BioPharma",
         equipment_system="Centrifuge C-102",
+        consultant="ORKA Consultant",
         validation_phase="OQ (Operational Qualification)",
         intended_outcome="Stable rotation at 15,000 RPM for 30 mins",
         obstacle="Excessive vibration at high speeds causing safety cutoff",
@@ -17,6 +18,7 @@ db: List[ValidationEntry] = [
     ValidationEntry(
         project_name="Project Gamma - Labs",
         equipment_system="Agilent HPLC 1260",
+        consultant="ORKA Consultant",
         validation_phase="PQ (Performance Qualification)",
         intended_outcome="Consistent retention times across 5 injection cycles",
         obstacle="Retention time drift observed after the 3rd injection",
@@ -27,6 +29,7 @@ db: List[ValidationEntry] = [
     ValidationEntry(
         project_name="Orka Internal Training",
         equipment_system="DeltaV Control System",
+        consultant="ORKA Consultant",
         validation_phase="FAT (Factory Acceptance Test)",
         intended_outcome="Successful automated emergency shutdown (ESD) sequence",
         obstacle="IO mapping error caused the valve to stay open during ESD",
