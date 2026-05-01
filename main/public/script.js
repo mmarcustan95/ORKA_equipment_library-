@@ -113,7 +113,7 @@ function editEntry(id) {
     document.getElementById('attachments').value = entry.attachments || '';
     document.getElementById('keywords').value = entry.keywords.join(', ');
 
-    modal.style.display = 'block';
+    openModal();
 }
 
 
@@ -145,11 +145,21 @@ function handleSearch() {
     renderEntries(filtered);
 }
 
+function openModal() {
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
 // Modal Toggle
 addBtn.onclick = () => {
     editingId = null;
     modalTitle.textContent = 'Log Validation Lesson Learned';
-    
+
     // Load draft if it exists
     const draft = localStorage.getItem('lesson_draft');
     if (draft) {
@@ -159,8 +169,8 @@ addBtn.onclick = () => {
         form.reset();
         document.getElementById('date_logged').value = new Date().toISOString().split('T')[0];
     }
-    
-    modal.style.display = 'block';
+
+    openModal();
 };
 
 function fillForm(data) {
@@ -199,7 +209,7 @@ form.addEventListener('input', () => {
 
 closeBtn.onclick = () => {
     if (!editingId && formHasContent() && !confirm('You have unsaved changes. Close anyway?')) return;
-    modal.style.display = 'none';
+    closeModal();
 };
 
 // Check if form has content to prevent accidental data loss
@@ -208,10 +218,10 @@ function formHasContent() {
     return inputs.some(id => document.getElementById(id).value.trim() !== '');
 }
 
-window.onclick = (e) => { 
+window.onclick = (e) => {
     if (e.target == modal) {
         if (!editingId && formHasContent() && !confirm('You have unsaved changes. Close anyway?')) return;
-        modal.style.display = 'none';
+        closeModal();
     }
 };
 
@@ -245,10 +255,10 @@ form.onsubmit = async (e) => {
 
         if (response.ok) {
             form.reset();
-            localStorage.removeItem('lesson_draft'); // Clear draft on success
-            modal.style.display = 'none';
+            localStorage.removeItem('lesson_draft');
+            closeModal();
             editingId = null;
-            loadEntries(); // Refresh the grid
+            loadEntries();
         }
     } catch (error) {
         console.error('Error submitting entry:', error);

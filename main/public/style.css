@@ -410,6 +410,7 @@ body {
     backdrop-filter: blur(4px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .modal-content {
