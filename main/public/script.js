@@ -1,7 +1,7 @@
 const API_URL = '/entries';
 let allEntries = [];
 let editingId = null;
-let activeFilter = null; // tracks the active phase filter tag
+let activeFilter = null;
 
 const STANDARD_PHASES = ['URS', 'FAT', 'SAT', 'IQ', 'OQ', 'PQ'];
 
@@ -27,17 +27,29 @@ async function loadEntries() {
     }
 }
 
-function renderEntries(entries) {
-    if (entries.length === 0) {
-        grid.innerHTML = `<div class="loader">No matching lessons found. Try a different search.</div>`;
-        return;
-    }
+// --- Card rendering helpers ---
 
-    grid.innerHTML = entries.map(entry => `
+function renderModelNumber(modelNumber) {
+    if (!modelNumber) return '';
+    return `<span style="font-size: 0.9rem; font-weight: 300; opacity: 0.7; margin-left: 0.5rem;">(${modelNumber})</span>`;
+}
+
+function renderOutcome(outcome) {
+    if (!outcome) return '';
+    return `<h4>Intended Outcome</h4><p>${outcome}</p>`;
+}
+
+function renderAttachment(attachments) {
+    if (!attachments) return '';
+    return `<a href="${attachments}" target="_blank" class="attachment-link">📎 View Files</a>`;
+}
+
+function renderCard(entry) {
+    return `
         <article class="card">
             <div class="card-header">
                 <div class="header-main">
-                    <h3 class="equipment-name">${entry.equipment_system} ${entry.model_number ? `<span style="font-size: 0.9rem; font-weight: 300; opacity: 0.7; margin-left: 0.5rem;">(${entry.model_number})</span>` : ''}</h3>
+                    <h3 class="equipment-name">${entry.equipment_system} ${renderModelNumber(entry.model_number)}</h3>
                     <div class="project-name">${entry.project_name} | <span class="consultant-name" style="color: var(--text-primary); font-weight: 500;">${entry.consultant}</span></div>
                 </div>
                 <div class="header-actions">
@@ -46,24 +58,17 @@ function renderEntries(entries) {
                     <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
                 </div>
             </div>
-            
             <div class="card-body">
-                ${entry.intended_outcome ? `
-                    <h4>Intended Outcome</h4>
-                    <p>${entry.intended_outcome}</p>
-                ` : ''}
-                
+                ${renderOutcome(entry.intended_outcome)}
                 <div class="obstacle-box">
                     <h4>Obstacle Encountered</h4>
                     <p>${entry.obstacle}</p>
                 </div>
-                
                 <div class="resolution-box">
                     <h4>Resolution / Learning</h4>
                     <p>${entry.resolution}</p>
                 </div>
             </div>
-            
             <div class="card-footer">
                 <div class="footer-left">
                     <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
@@ -71,21 +76,26 @@ function renderEntries(entries) {
                         ${entry.keywords.map(kw => `<span class="keyword-pill">${kw}</span>`).join('')}
                     </div>
                 </div>
-                ${entry.attachments ? `<a href="${entry.attachments}" target="_blank" class="attachment-link">📎 View Files</a>` : ''}
+                ${renderAttachment(entry.attachments)}
             </div>
         </article>
-    `).join('');
+    `;
+}
+
+function renderEntries(entries) {
+    if (entries.length === 0) {
+        grid.innerHTML = `<div class="loader">No matching lessons found. Try a different search.</div>`;
+        return;
+    }
+    grid.innerHTML = entries.map(renderCard).join('');
 }
 
 // Global Delete Function
 async function deleteEntry(id) {
     if (!confirm('Are you sure you want to delete this validation lesson? This cannot be undone.')) return;
-    
     try {
         const response = await fetch(`/entries/${id}`, { method: 'DELETE' });
-        if (response.ok) {
-            loadEntries(); // Refresh the grid
-        }
+        if (response.ok) loadEntries();
     } catch (error) {
         console.error('Error deleting entry:', error);
         alert('Failed to delete entry.');
@@ -96,55 +106,41 @@ async function deleteEntry(id) {
 function editEntry(id) {
     const entry = allEntries.find(e => e.id === id);
     if (!entry) return;
-
     editingId = id;
     modalTitle.textContent = 'Edit Validation Lesson';
-    
-    // Fill form
-    document.getElementById('project_name').value = entry.project_name;
-    document.getElementById('consultant').value = entry.consultant;
-    document.getElementById('equipment_system').value = entry.equipment_system;
-    document.getElementById('model_number').value = entry.model_number || '';
-    document.getElementById('validation_phase').value = entry.validation_phase;
-    document.getElementById('intended_outcome').value = entry.intended_outcome;
-    document.getElementById('obstacle').value = entry.obstacle;
-    document.getElementById('resolution').value = entry.resolution;
-    document.getElementById('date_logged').value = entry.date_logged;
-    document.getElementById('attachments').value = entry.attachments || '';
-    document.getElementById('keywords').value = entry.keywords.join(', ');
-
+    fillForm(entry);
     openModal();
 }
 
+// --- Search & filter helpers ---
 
-// Search & Filter Logic
+function entryMatchesText(entry, query) {
+    if (!query) return true;
+    return (
+        entry.equipment_system.toLowerCase().includes(query) ||
+        (entry.model_number && entry.model_number.toLowerCase().includes(query)) ||
+        entry.project_name.toLowerCase().includes(query) ||
+        entry.keywords.some(kw => kw.toLowerCase().includes(query)) ||
+        entry.obstacle.toLowerCase().includes(query) ||
+        entry.validation_phase.toLowerCase().includes(query)
+    );
+}
+
+function entryMatchesPhase(entry) {
+    if (activeFilter === 'Others') return !STANDARD_PHASES.includes(entry.validation_phase);
+    if (activeFilter) return entry.validation_phase === activeFilter;
+    return true;
+}
+
 function handleSearch() {
     const query = searchInput.value.toLowerCase();
-
-    const filtered = allEntries.filter(entry => {
-        // Text search across multiple fields
-        const matchesText = !query ||
-            entry.equipment_system.toLowerCase().includes(query) ||
-            (entry.model_number && entry.model_number.toLowerCase().includes(query)) ||
-            entry.project_name.toLowerCase().includes(query) ||
-            entry.keywords.some(kw => kw.toLowerCase().includes(query)) ||
-            entry.obstacle.toLowerCase().includes(query) ||
-            entry.validation_phase.toLowerCase().includes(query);
-
-        // Phase filter tag
-        let matchesPhase = true;
-        if (activeFilter === 'Others') {
-            matchesPhase = !STANDARD_PHASES.includes(entry.validation_phase);
-        } else if (activeFilter) {
-            matchesPhase = entry.validation_phase === activeFilter;
-        }
-
-        return matchesText && matchesPhase;
-    });
-
+    const filtered = allEntries.filter(entry =>
+        entryMatchesText(entry, query) && entryMatchesPhase(entry)
+    );
     renderEntries(filtered);
 }
 
+// Modal helpers
 function openModal() {
     modal.style.display = 'block';
     document.body.style.overflow = 'hidden';
@@ -159,52 +155,65 @@ function closeModal() {
 addBtn.onclick = () => {
     editingId = null;
     modalTitle.textContent = 'Log Validation Lesson Learned';
-
-    // Load draft if it exists
     const draft = localStorage.getItem('lesson_draft');
     if (draft) {
-        const data = JSON.parse(draft);
-        fillForm(data);
+        fillForm(JSON.parse(draft));
     } else {
         form.reset();
         document.getElementById('date_logged').value = new Date().toISOString().split('T')[0];
     }
-
     openModal();
 };
 
+// --- Form helpers ---
+
+function normalizeKeywords(keywords) {
+    if (Array.isArray(keywords)) return keywords.join(', ');
+    return keywords || '';
+}
+
 function fillForm(data) {
-    document.getElementById('project_name').value = data.project_name || '';
-    document.getElementById('consultant').value = data.consultant || '';
-    document.getElementById('equipment_system').value = data.equipment_system || '';
-    document.getElementById('model_number').value = data.model_number || '';
-    document.getElementById('validation_phase').value = data.validation_phase || 'URS';
-    document.getElementById('intended_outcome').value = data.intended_outcome || '';
-    document.getElementById('obstacle').value = data.obstacle || '';
-    document.getElementById('resolution').value = data.resolution || '';
-    document.getElementById('date_logged').value = data.date_logged || new Date().toISOString().split('T')[0];
-    document.getElementById('attachments').value = data.attachments || '';
-    document.getElementById('keywords').value = Array.isArray(data.keywords) ? data.keywords.join(', ') : (data.keywords || '');
+    const today = new Date().toISOString().split('T')[0];
+    const fields = {
+        project_name:      data.project_name || '',
+        consultant:        data.consultant || '',
+        equipment_system:  data.equipment_system || '',
+        model_number:      data.model_number || '',
+        validation_phase:  data.validation_phase || 'URS',
+        intended_outcome:  data.intended_outcome || '',
+        obstacle:          data.obstacle || '',
+        resolution:        data.resolution || '',
+        date_logged:       data.date_logged || today,
+        attachments:       data.attachments || '',
+        keywords:          normalizeKeywords(data.keywords),
+    };
+    Object.entries(fields).forEach(([id, value]) => {
+        document.getElementById(id).value = value;
+    });
+}
+
+function getFormData() {
+    return {
+        project_name:      document.getElementById('project_name').value,
+        consultant:        document.getElementById('consultant').value,
+        equipment_system:  document.getElementById('equipment_system').value,
+        model_number:      document.getElementById('model_number').value,
+        validation_phase:  document.getElementById('validation_phase').value,
+        intended_outcome:  document.getElementById('intended_outcome').value,
+        obstacle:          document.getElementById('obstacle').value,
+        resolution:        document.getElementById('resolution').value,
+        date_logged:       document.getElementById('date_logged').value,
+        attachments:       document.getElementById('attachments').value,
+        keywords:          document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k !== ''),
+    };
 }
 
 // Auto-save draft as the user types
 form.addEventListener('input', () => {
-    if (editingId) return; // Don't save drafts when editing existing entries
-    
-    const draftData = {
-        project_name: document.getElementById('project_name').value,
-        consultant: document.getElementById('consultant').value,
-        equipment_system: document.getElementById('equipment_system').value,
-        model_number: document.getElementById('model_number').value,
-        validation_phase: document.getElementById('validation_phase').value,
-        intended_outcome: document.getElementById('intended_outcome').value,
-        obstacle: document.getElementById('obstacle').value,
-        resolution: document.getElementById('resolution').value,
-        date_logged: document.getElementById('date_logged').value,
-        attachments: document.getElementById('attachments').value,
-        keywords: document.getElementById('keywords').value
-    };
-    localStorage.setItem('lesson_draft', JSON.stringify(draftData));
+    if (editingId) return;
+    const draft = getFormData();
+    draft.keywords = document.getElementById('keywords').value;
+    localStorage.setItem('lesson_draft', JSON.stringify(draft));
 });
 
 closeBtn.onclick = () => {
@@ -212,7 +221,6 @@ closeBtn.onclick = () => {
     closeModal();
 };
 
-// Check if form has content to prevent accidental data loss
 function formHasContent() {
     const inputs = ['project_name', 'consultant', 'equipment_system', 'intended_outcome', 'obstacle', 'resolution'];
     return inputs.some(id => document.getElementById(id).value.trim() !== '');
@@ -228,31 +236,14 @@ window.onclick = (e) => {
 // Form Submission
 form.onsubmit = async (e) => {
     e.preventDefault();
-    
-    const formData = {
-        project_name: document.getElementById('project_name').value,
-        consultant: document.getElementById('consultant').value,
-        equipment_system: document.getElementById('equipment_system').value,
-        model_number: document.getElementById('model_number').value,
-        validation_phase: document.getElementById('validation_phase').value,
-        intended_outcome: document.getElementById('intended_outcome').value,
-        obstacle: document.getElementById('obstacle').value,
-        resolution: document.getElementById('resolution').value,
-        date_logged: document.getElementById('date_logged').value,
-        attachments: document.getElementById('attachments').value,
-        keywords: document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k !== "")
-    };
-
     const url = editingId ? `${API_URL}/${editingId}` : API_URL;
     const method = editingId ? 'PUT' : 'POST';
-
     try {
         const response = await fetch(url, {
-            method: method,
+            method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(getFormData()),
         });
-
         if (response.ok) {
             form.reset();
             localStorage.removeItem('lesson_draft');
@@ -270,9 +261,7 @@ form.onsubmit = async (e) => {
 filterTags.forEach(tag => {
     tag.onclick = () => {
         const filter = tag.getAttribute('data-filter');
-
         if (activeFilter === filter) {
-            // Clicking the same tag again clears the filter
             activeFilter = null;
             tag.classList.remove('active');
         } else {
@@ -280,7 +269,6 @@ filterTags.forEach(tag => {
             filterTags.forEach(t => t.classList.remove('active'));
             tag.classList.add('active');
         }
-
         handleSearch();
     };
 });
