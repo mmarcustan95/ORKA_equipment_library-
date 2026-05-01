@@ -126,6 +126,7 @@ body {
     margin-bottom: 0.5rem;
     background: linear-gradient(to right, #fff, var(--accent));
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -407,6 +408,8 @@ body {
     height: 100%;
     background: rgba(15, 23, 42, 0.9);
     backdrop-filter: blur(4px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .modal-content {
@@ -575,6 +578,6 @@ textarea:focus {
 
     .modal-content {
         padding: 1.5rem;
-        margin: 10% auto;
+        margin: 5% auto 10% auto;
     }
 }
