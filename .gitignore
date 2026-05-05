@@ -43,4 +43,5 @@ main/graph_connector.py
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/settings.json
 
