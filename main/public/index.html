@@ -20,6 +20,7 @@
             <div class="nav-links">
                 <a href="https://orkacp.sharepoint.com/:f:/s/TeamOrka/IgCoil_VLXALRpGPwVXxpCI7AUm5VaWlNwjEyfZoCyiEYZQ?e=3PMQoA"
                     target="_blank" class="btn-secondary">📂 SharePoint Library</a>
+                <button id="export-csv-btn" class="btn-secondary">📤 Export CSV</button>
                 <button id="add-entry-btn" class="btn-primary">+ Log New Lesson</button>
             </div>
         </div>
@@ -36,7 +37,7 @@
             <input type="text" id="search-input"
                 placeholder="🔍 Search by equipment, project, or keyword (e.g. Centrifuge)...">
             <div class="filters">
-                <span class="filter-label">Quick Filters:</span>
+                <span class="filter-label">Phase:</span>
                 <button class="filter-tag" data-filter="URS">URS</button>
                 <button class="filter-tag" data-filter="FAT">FAT</button>
                 <button class="filter-tag" data-filter="SAT">SAT</button>
@@ -47,9 +48,37 @@
             </div>
         </section>
 
+        <div class="stats-bar">
+            <span>📋 <strong id="stat-total">–</strong> total entries</span>
+            <span>👤 <strong id="stat-consultants">–</strong> consultants</span>
+            <span>🏆 Top phase: <strong id="stat-top-phase">–</strong></span>
+        </div>
+
+        <div class="controls-row">
+            <span id="entry-count" class="entry-count">Loading...</span>
+            <select id="consultant-filter" class="filter-control">
+                <option value="">👤 All Consultants</option>
+            </select>
+            <div class="date-filter">
+                <span class="filter-label">📅</span>
+                <input type="date" id="date-from" class="filter-date">
+                <span class="filter-label">→</span>
+                <input type="date" id="date-to" class="filter-date">
+            </div>
+            <select id="sort-select" class="sort-select">
+                <option value="newest">🕐 Newest first</option>
+                <option value="oldest">🕐 Oldest first</option>
+                <option value="equipment">A–Z Equipment</option>
+                <option value="project">A–Z Project</option>
+            </select>
+        </div>
+
         <section id="entries-grid" class="entries-grid">
             <!-- Entries will be injected here by JavaScript -->
-            <div class="loader">Loading institutional knowledge...</div>
+            <div class="loader">
+                <div class="spinner"></div>
+                <p>Loading institutional knowledge...</p>
+            </div>
         </section>
     </main>
 
