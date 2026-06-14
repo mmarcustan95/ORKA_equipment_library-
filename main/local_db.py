@@ -170,5 +170,4 @@ class LocalDatabase:
             conn.close()
 
 # Singleton instance
-test_db = LocalDatabase()
-
+test_db = LocalDatabase() # type: ignore
