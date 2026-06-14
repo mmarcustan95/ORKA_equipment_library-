@@ -64,9 +64,9 @@ class LocalDatabase:
         conn = self._get_connection()
         try:
             if self.db_url:
-                cur = conn.cursor(cursor_factory=RealDictCursor)
+                cur = conn.cursor(cursor_factory=RealDictCursor) # type: ignore
             else:
-                conn.row_factory = sqlite3.Row
+                conn.row_factory = sqlite3.Row # type: ignore
                 cur = conn.cursor()
             
             cur.execute("SELECT * FROM entries")
@@ -75,18 +75,18 @@ class LocalDatabase:
             entries = []
             for row in rows:
                 entries.append(ValidationEntry(
-                    id=row["id"],
-                    project_name=row["project_name"],
-                    equipment_system=row["equipment_system"],
-                    model_number=row["model_number"] if "model_number" in row.keys() and row["model_number"] else "",
-                    validation_phase=row["validation_phase"],
-                    consultant=row["consultant"] if row["consultant"] else "",
-                    intended_outcome=row["intended_outcome"],
-                    obstacle=row["obstacle"],
-                    resolution=row["resolution"],
-                    date_logged=row["date_logged"],
-                    attachments=row["attachments"] if row["attachments"] else "",
-                    keywords=json.loads(row["keywords"]) if isinstance(row["keywords"], str) else row["keywords"]
+                    id=row["id"], # type: ignore
+                    project_name=row["project_name"], # type: ignore
+                    equipment_system=row["equipment_system"], # type: ignore
+                    model_number=row["model_number"] if "model_number" in row.keys() and row["model_number"] else "",   # type: ignore
+                    validation_phase=row["validation_phase"], # type: ignore
+                    consultant=row["consultant"] if row["consultant"] else "", # type: ignore
+                    intended_outcome=row["intended_outcome"], # type: ignore   
+                    obstacle=row["obstacle"], # type: ignore
+                    resolution=row["resolution"], # type: ignore
+                    date_logged=row["date_logged"], # type: ignore
+                    attachments=row["attachments"] if row["attachments"] else "", # type: ignore
+                    keywords=json.loads(row["keywords"]) if isinstance(row["keywords"], str) else row["keywords"] # type: ignore
                 ))
             return entries
         finally:
