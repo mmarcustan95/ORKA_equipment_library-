@@ -1,10 +1,25 @@
+"""
+local_db.py
+-----------
+Database abstraction layer for the ORKA Equipment Knowledge Library.
+
+Supports two backends transparently:
+  - SQLite  : used locally for development (default, no config needed).
+  - PostgreSQL: used in production when the DATABASE_URL environment variable is set.
+
+All CRUD operations (Create, Read, Update, Delete) on ValidationEntry records live here.
+The rest of the application interacts with the database only through the `test_db` singleton
+exported at the bottom of this file.
+"""
+
 import sqlite3
 import json
 import os
 from typing import List
 from .models import ValidationEntry
 
-# Try to import psycopg2 for PostgreSQL support
+# Attempt to import the PostgreSQL driver. If it's not installed the app
+# falls back to SQLite automatically — no configuration needed for local dev.
 try:
     import psycopg2
     from psycopg2.extras import RealDictCursor
@@ -12,26 +27,59 @@ try:
 except ImportError:
     HAS_POSTGRES = False
 
+
 class LocalDatabase:
+    """
+    Handles all database interactions for ValidationEntry records.
+
+    On instantiation it automatically:
+      1. Detects whether to use SQLite or PostgreSQL.
+      2. Creates the 'entries' table if it doesn't already exist.
+      3. Runs a lightweight migration to add any missing columns (e.g. model_number).
+    """
+
     def __init__(self, db_path="orka_test_library.db"):
+        """
+        Initialise the database connection settings and ensure the schema is ready.
+
+        Parameters
+        ----------
+        db_path : str
+            Path to the SQLite file used in local development.
+            Ignored when DATABASE_URL is set (PostgreSQL mode).
+        """
+        # If DATABASE_URL is set in the environment, PostgreSQL is used instead of SQLite
         self.db_url = os.getenv("DATABASE_URL")
         self.db_path = db_path
         self._init_db()
 
     def _get_connection(self):
+        """
+        Open and return a new database connection.
+
+        Returns a psycopg2 connection for PostgreSQL or a sqlite3 connection
+        for local development, depending on whether DATABASE_URL is set.
+        Callers are responsible for closing the connection after use.
+        """
         if self.db_url:
-            # Use PostgreSQL
             return psycopg2.connect(self.db_url)
         else:
-            # Use SQLite
             return sqlite3.connect(self.db_path)
 
     def _init_db(self):
+        """
+        Create the 'entries' table if it doesn't exist, and apply any outstanding migrations.
+
+        Called once on startup. The CREATE TABLE statement is safe to run repeatedly
+        because of the IF NOT EXISTS clause. The migration block checks for the
+        model_number column and adds it if missing — this handles databases created
+        before that field was introduced.
+        """
         conn = self._get_connection()
         try:
             with conn:
                 cur = conn.cursor()
-                # SQL syntax for Table creation is the same for both
+                # SQL syntax for table creation is compatible with both SQLite and PostgreSQL
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS entries (
                         id TEXT PRIMARY KEY,
@@ -48,44 +96,59 @@ class LocalDatabase:
                         keywords TEXT
                     )
                 """)
-                
-                # Dynamic migration: Check if model_number exists, if not add it
+
+                # Migration: add model_number column to existing databases that pre-date it
                 try:
                     cur.execute("SELECT model_number FROM entries LIMIT 1")
                 except:
+                    # PostgreSQL requires an explicit rollback after a failed statement
+                    # before new statements can be issued on the same connection
                     if self.db_url:
-                        conn.rollback() # Postgres needs rollback after error
+                        conn.rollback()
                         cur = conn.cursor()
                     cur.execute("ALTER TABLE entries ADD COLUMN model_number TEXT")
         finally:
             conn.close()
 
     def get_entries(self) -> List[ValidationEntry]:
+        """
+        Fetch all ValidationEntry records from the database.
+
+        Returns
+        -------
+        List[ValidationEntry]
+            Every entry currently stored, as a list of Pydantic model instances.
+            Returns an empty list if the table has no rows.
+        """
         conn = self._get_connection()
         try:
             if self.db_url:
+                # RealDictCursor makes PostgreSQL rows behave like dicts (column name access)
                 cur = conn.cursor(cursor_factory=RealDictCursor) # type: ignore
             else:
+                # sqlite3.Row also enables column-name access on SQLite rows
                 conn.row_factory = sqlite3.Row # type: ignore
                 cur = conn.cursor()
-            
+
             cur.execute("SELECT * FROM entries")
             rows = cur.fetchall()
-            
+
             entries = []
             for row in rows:
                 entries.append(ValidationEntry(
                     id=row["id"], # type: ignore
                     project_name=row["project_name"], # type: ignore
                     equipment_system=row["equipment_system"], # type: ignore
+                    # model_number may be absent in older DB rows, default to empty string
                     model_number=row["model_number"] if "model_number" in row.keys() and row["model_number"] else "",   # type: ignore
                     validation_phase=row["validation_phase"], # type: ignore
                     consultant=row["consultant"] if row["consultant"] else "", # type: ignore
-                    intended_outcome=row["intended_outcome"], # type: ignore   
+                    intended_outcome=row["intended_outcome"], # type: ignore
                     obstacle=row["obstacle"], # type: ignore
                     resolution=row["resolution"], # type: ignore
                     date_logged=row["date_logged"], # type: ignore
                     attachments=row["attachments"] if row["attachments"] else "", # type: ignore
+                    # keywords is stored as a JSON string in the DB; deserialise it back to a list
                     keywords=json.loads(row["keywords"]) if isinstance(row["keywords"], str) else row["keywords"] # type: ignore
                 ))
             return entries
@@ -93,7 +156,22 @@ class LocalDatabase:
             conn.close()
 
     def create_entry(self, entry: ValidationEntry):
+        """
+        Insert a new ValidationEntry record into the database.
+
+        Parameters
+        ----------
+        entry : ValidationEntry
+            The fully populated entry to save. The id field is auto-generated
+            by the model if not provided.
+
+        Returns
+        -------
+        ValidationEntry
+            The same entry object that was passed in (unchanged).
+        """
         conn = self._get_connection()
+        # SQLite uses ? as the parameter placeholder; PostgreSQL uses %s
         placeholder = "%s" if self.db_url else "?"
         try:
             with conn:
@@ -112,15 +190,28 @@ class LocalDatabase:
                     entry.intended_outcome,
                     entry.obstacle,
                     entry.resolution,
-                    entry.date_logged.isoformat(),
+                    entry.date_logged.isoformat(),  # Store date as ISO string (YYYY-MM-DD)
                     entry.attachments,
-                    json.dumps(entry.keywords)
+                    json.dumps(entry.keywords)      # Serialise keyword list to JSON string
                 ))
             return entry
         finally:
             conn.close()
 
     def delete_entry(self, entry_id: str):
+        """
+        Permanently delete a ValidationEntry by its ID.
+
+        Parameters
+        ----------
+        entry_id : str
+            The UUID string of the entry to remove.
+
+        Returns
+        -------
+        bool
+            True if the operation completed without error.
+        """
         conn = self._get_connection()
         placeholder = "%s" if self.db_url else "?"
         try:
@@ -132,23 +223,39 @@ class LocalDatabase:
             conn.close()
 
     def update_entry(self, entry_id: str, entry: ValidationEntry):
+        """
+        Overwrite all fields of an existing entry (full replace, not partial patch).
+
+        Parameters
+        ----------
+        entry_id : str
+            The UUID string identifying which row to update.
+        entry : ValidationEntry
+            The new field values. The id inside the entry object is ignored;
+            the row is matched by entry_id.
+
+        Returns
+        -------
+        ValidationEntry
+            The updated entry object (unchanged from what was passed in).
+        """
         conn = self._get_connection()
         placeholder = "%s" if self.db_url else "?"
         try:
             with conn:
                 cur = conn.cursor()
                 cur.execute(f"""
-                    UPDATE entries SET 
-                        project_name = {placeholder}, 
-                        equipment_system = {placeholder}, 
+                    UPDATE entries SET
+                        project_name = {placeholder},
+                        equipment_system = {placeholder},
                         model_number = {placeholder},
-                        validation_phase = {placeholder}, 
-                        consultant = {placeholder}, 
-                        intended_outcome = {placeholder}, 
-                        obstacle = {placeholder}, 
-                        resolution = {placeholder}, 
-                        date_logged = {placeholder}, 
-                        attachments = {placeholder}, 
+                        validation_phase = {placeholder},
+                        consultant = {placeholder},
+                        intended_outcome = {placeholder},
+                        obstacle = {placeholder},
+                        resolution = {placeholder},
+                        date_logged = {placeholder},
+                        attachments = {placeholder},
                         keywords = {placeholder}
                     WHERE id = {placeholder}
                 """, (
@@ -163,11 +270,13 @@ class LocalDatabase:
                     entry.date_logged.isoformat(),
                     entry.attachments,
                     json.dumps(entry.keywords),
-                    entry_id
+                    entry_id  # WHERE clause — must be last in the tuple
                 ))
             return entry
         finally:
             conn.close()
 
-# Singleton instance
+
+# Singleton database instance shared across the whole application.
+# Import this object (not the class) in other modules.
 test_db = LocalDatabase() # type: ignore

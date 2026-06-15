@@ -1,10 +1,41 @@
+"""
+models.py
+---------
+Defines the core data model for the ORKA Equipment Knowledge Library.
+
+A ValidationEntry represents a single "lesson learned" record — capturing the
+equipment involved, what went wrong during validation, and how it was resolved.
+This model is used by the API layer (app.py), the database layer (local_db.py),
+and the AI embedding layer (vector_embed.py).
+"""
+
 from pydantic import BaseModel, Field
 from datetime import date
 from typing import List, Optional
 from uuid import uuid4, UUID
 
+
 class ValidationEntry(BaseModel):
-    # We use Field(default_factory=...) to generate a unique ID automatically if one isn't provided
+    """
+    Represents one equipment validation lesson learned entry.
+
+    Fields
+    ------
+    id              : Auto-generated unique identifier (UUID). Never needs to be set manually.
+    project_name    : Name of the pharmaceutical/biotech project (e.g. "ACME Pharma Suite 3").
+    equipment_system: The equipment or system being validated (e.g. "HVAC", "WFI Loop").
+    model_number    : Optional equipment model/tag number (e.g. "AHU-2200X").
+    validation_phase: IQ / OQ / PQ phase in which the issue occurred.
+    consultant      : Name of the validation consultant responsible for the entry.
+    intended_outcome: What the validation test was supposed to achieve.
+    obstacle        : The problem or deviation that was encountered.
+    resolution      : How the issue was resolved, including any corrective actions taken.
+    date_logged     : Date the lesson learned was recorded.
+    attachments     : Optional file path or URL pointing to supporting documents.
+    keywords        : List of tags for search and categorisation (e.g. ["HVAC", "PID", "ISO 7"]).
+    """
+
+    # Auto-generates a unique UUID if no id is provided on creation
     id: UUID = Field(default_factory=uuid4)
     project_name: str
     equipment_system: str
@@ -19,5 +50,5 @@ class ValidationEntry(BaseModel):
     keywords: List[str] = []
 
     class Config:
-        # This helps FastAPI understand how to convert data from a database (later)
+        # Allows Pydantic to read data from ORM/database row objects as well as plain dicts
         from_attributes = True
