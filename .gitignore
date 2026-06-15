@@ -38,6 +38,9 @@ Thumbs.db
 # Scratch directory
 scratch/
 
+# Tests
+testing/
+
 # Phase 2 - SharePoint Graph connector (not yet in use)
 main/graph_connector.py
 
