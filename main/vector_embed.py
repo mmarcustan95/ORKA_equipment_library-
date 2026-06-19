@@ -18,13 +18,22 @@ Typical usage:
     vector = embedder.embed()   # returns a list of 768 floats
 """
 
-from .local_db import ValidationEntry
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from .models import ValidationEntry
 from google import genai
 from google.genai import types
 
-# Initialise the Gemini client once at module level.
-# Reads the API key from the GEMINI_API_KEY environment variable automatically.
-client = genai.Client()
+# Load the local development .env before creating the Gemini client.
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    raise RuntimeError("Set GEMINI_API_KEY in main/.env or your environment.")
+
+client = genai.Client(api_key=api_key)
 
 
 class VectorEmbedder:

@@ -5,4 +5,4 @@ msal
 python-dotenv
 pydantic
 psycopg2-binary
-google-generativeai
+google-genai
