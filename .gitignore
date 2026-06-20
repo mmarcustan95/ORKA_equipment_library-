@@ -11,6 +11,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.claude
 
 # Project configuration (like VS Code settings if you don't want to track them)
 # .vscode/
