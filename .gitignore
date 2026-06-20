@@ -29,6 +29,9 @@ coverage.xml
 *.py,cover
 .hypothesis/
 
+#one time scripts
+backfill_embeddings.py
+
 # macOS / Windows junk files
 .DS_Store
 Thumbs.db
