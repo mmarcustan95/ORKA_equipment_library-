@@ -26,52 +26,41 @@ from .models import ValidationEntry
 from google import genai
 from google.genai import types
 
-# Load the local development .env before creating the Gemini client.
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-if not api_key:
-    raise RuntimeError("Set GEMINI_API_KEY in main/.env or your environment.")
+_EMBED_MODEL = "gemini-embedding-001"
+_EMBED_DIMS = 768
+_client: genai.Client | None = None
 
-client = genai.Client(api_key=api_key)
+
+def _get_client() -> genai.Client:
+    global _client
+    if _client is None:
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise RuntimeError("Set GEMINI_API_KEY in main/.env or your environment.")
+        _client = genai.Client(api_key=api_key)
+    return _client
+
+
+def embed_text(text: str) -> list[float]:
+    """Embed an arbitrary string — used to embed chat query strings for similarity search."""
+    result = _get_client().models.embed_content(
+        contents=text,
+        model=_EMBED_MODEL,
+        config=types.EmbedContentConfig(output_dimensionality=_EMBED_DIMS),
+    )
+    return result.embeddings[0].values
 
 
 class VectorEmbedder:
-    """
-    Converts a ValidationEntry into a 768-dimension semantic embedding vector.
-
-    The entry's text fields are concatenated into a single labelled string
-    and sent to the Gemini embedding model. The resulting vector numerically
-    represents the meaning of the entry and can be compared against other
-    vectors using cosine similarity for semantic search.
-    """
+    """Converts a ValidationEntry into a 768-dimension semantic embedding vector."""
 
     def __init__(self, validation_entry: ValidationEntry):
-        """
-        Parameters
-        ----------
-        validation_entry : ValidationEntry
-            The database entry to be embedded.
-        """
         self.validation_entry = validation_entry
 
     def prepare_text(self) -> str:
-        """
-        Serialise the entry's key fields into a single labelled text string.
-
-        Each field is formatted as "field name:value" and joined with spaces.
-        Including field labels (not just values) gives the embedding model
-        structural context, improving retrieval accuracy.
-
-        Optional fields that are None default to 'NA' to avoid serialisation errors.
-        The keywords list is joined into a comma-separated string.
-
-        Returns
-        -------
-        str
-            A single string representing the full content of the entry,
-            ready to be passed to the embedding model.
-        """
+        """Serialise the entry's key fields into a single labelled string for embedding."""
         fields = {
             'project name':     self.validation_entry.project_name,
             'equipment system': self.validation_entry.equipment_system,
@@ -86,23 +75,6 @@ class VectorEmbedder:
         }
         return " ".join([f"{key}:{value}" for key, value in fields.items()])
 
-    def embed(self) -> list:
-        """
-        Generate a 768-dimensional embedding vector for this entry.
-
-        Calls the Gemini embedding model with the prepared text and returns
-        the raw float vector. This vector should be stored alongside the entry
-        in the database to enable fast similarity search during RAG retrieval.
-
-        Returns
-        -------
-        list[float]
-            A list of 768 floats representing the semantic content of the entry.
-        """
-        embedding_vector = client.models.embed_content(
-            contents=self.prepare_text(),
-            model="gemini-embedding-001",
-            # Request exactly 768 dimensions (model default is 1536)
-            config=types.EmbedContentConfig(output_dimensionality=768)
-        )
-        return embedding_vector.embeddings[0].values
+    def embed(self) -> list[float]:
+        """Generate a 768-dimensional embedding vector for this entry."""
+        return embed_text(self.prepare_text())

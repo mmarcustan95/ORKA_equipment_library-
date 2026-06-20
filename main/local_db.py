@@ -93,20 +93,19 @@ class LocalDatabase:
                         resolution TEXT,
                         date_logged TEXT,
                         attachments TEXT,
-                        keywords TEXT
+                        keywords TEXT,
+                        embedding TEXT
                     )
                 """)
 
-                # Migration: add model_number column to existing databases that pre-date it
-                try:
-                    cur.execute("SELECT model_number FROM entries LIMIT 1")
-                except:
-                    # PostgreSQL requires an explicit rollback after a failed statement
-                    # before new statements can be issued on the same connection
-                    if self.db_url:
-                        conn.rollback()
-                        cur = conn.cursor()
-                    cur.execute("ALTER TABLE entries ADD COLUMN model_number TEXT")
+                for col, definition in [("model_number", "TEXT"), ("embedding", "TEXT")]:
+                    try:
+                        cur.execute(f"SELECT {col} FROM entries LIMIT 1")
+                    except:
+                        if self.db_url:
+                            conn.rollback()
+                            cur = conn.cursor()
+                        cur.execute(f"ALTER TABLE entries ADD COLUMN {col} {definition}")
         finally:
             conn.close()
 
@@ -219,6 +218,22 @@ class LocalDatabase:
                 cur = conn.cursor()
                 cur.execute(f"DELETE FROM entries WHERE id = {placeholder}", (entry_id,))
             return True
+        finally:
+            conn.close()
+
+    def update_embedding(self, entry_id: str, embedding: list) -> None:
+        """Persist a pre-computed embedding vector for an existing entry."""
+        conn = self._get_connection()
+        placeholder = "%s" if self.db_url else "?"
+        # pgvector accepts a Python list directly; SQLite stores it as a JSON string
+        value = embedding if self.db_url else json.dumps(embedding)
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.execute(
+                    f"UPDATE entries SET embedding = {placeholder} WHERE id = {placeholder}",
+                    (value, entry_id),
+                )
         finally:
             conn.close()
 
