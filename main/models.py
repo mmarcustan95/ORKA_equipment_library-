@@ -92,4 +92,3 @@ class ChatResponse(BaseModel):
 
     answer: str
     sources: List[ChatSources]
-

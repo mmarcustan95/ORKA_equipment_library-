@@ -2,6 +2,7 @@ const messagesEl = document.getElementById('chat-messages');
 const chatForm   = document.getElementById('chat-form');
 const chatInput  = document.getElementById('chat-input');
 const sendBtn    = document.getElementById('send-btn');
+const attachShortcut = document.getElementById('attach-shortcut');
 
 const uploadForm   = document.getElementById('upload-form');
 const uploadFile   = document.getElementById('upload-file');
@@ -10,10 +11,13 @@ const dropLabel    = document.getElementById('drop-label');
 const uploadBtn    = document.getElementById('upload-btn');
 const uploadStatus = document.getElementById('upload-status');
 
+let isSubmitting = false;
+
 // Auto-grow textarea up to ~5 lines
 chatInput.addEventListener('input', () => {
     chatInput.style.height = 'auto';
     chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+    updateSendState();
 });
 
 // Send on Enter, newline on Shift+Enter
@@ -32,7 +36,8 @@ chatForm.addEventListener('submit', async (e) => {
     appendUserBubble(query);
     chatInput.value = '';
     chatInput.style.height = 'auto';
-    sendBtn.disabled = true;
+    isSubmitting = true;
+    updateSendState();
 
     const typingEl = appendTypingIndicator();
 
@@ -51,7 +56,8 @@ chatForm.addEventListener('submit', async (e) => {
         appendErrorBubble('Failed to reach the AI. Check that the server is running.');
         console.error(err);
     } finally {
-        sendBtn.disabled = false;
+        isSubmitting = false;
+        updateSendState();
         chatInput.focus();
     }
 });
@@ -216,6 +222,16 @@ function escapeHtml(str) {
 function scrollToBottom() {
     messagesEl.scrollTop = messagesEl.scrollHeight;
 }
+
+function updateSendState() {
+    sendBtn.disabled = isSubmitting || !chatInput.value.trim();
+}
+
+attachShortcut.addEventListener('click', () => {
+    uploadFile.click();
+});
+
+updateSendState();
 
 // ── Upload ────────────────────────────────────────────────────────────────────
 

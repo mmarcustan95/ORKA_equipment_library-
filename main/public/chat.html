@@ -40,14 +40,31 @@
                 </div>
             </div>
 
-            <form id="chat-form" class="chat-input-area" autocomplete="off">
-                <div class="chat-input-wrapper">
+            <form id="chat-form" class="chat-input-area ai-prompt" autocomplete="off">
+                <div class="ai-prompt-header">
+                    <div class="ai-prompt-title">
+                        <span class="model-mark" aria-hidden="true">AI</span>
+                        <span>ORKA AI ready</span>
+                    </div>
+                    <span class="ai-prompt-mode">Knowledge base first</span>
+                </div>
+
+                <div class="ai-prompt-box">
                     <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
-                    <button type="submit" id="send-btn" class="btn-send" aria-label="Send">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
+                    <div class="ai-prompt-toolbar">
+                        <div class="prompt-tools">
+                            <button type="button" id="attach-shortcut" class="tool-button" aria-label="Attach document">
+                                <svg viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M6.4 11.6l5-5a2.6 2.6 0 0 0-3.7-3.7l-5 5a3.7 3.7 0 1 0 5.2 5.2l4.4-4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <button type="submit" id="send-btn" class="btn-send" aria-label="Send message">
+                            <svg viewBox="0 0 16 16" aria-hidden="true">
+                                <path d="M8 13V3M3 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <p class="input-hint">Shift+Enter for new line</p>
             </form>

@@ -47,6 +47,12 @@ async def chat_page():
     return FileResponse("main/public/chat.html")
 
 
+@app.get("/chat")
+async def chat_page_alias():
+    """Serve the AI chat page at the documented /chat route."""
+    return FileResponse("main/public/chat.html")
+
+
 @app.get("/entries", response_model=List[ValidationEntry], tags=["Entries"])
 async def get_entries():
     """
