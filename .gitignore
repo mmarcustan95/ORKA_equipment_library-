@@ -48,6 +48,10 @@ testing/
 # Phase 2 - SharePoint Graph connector (not yet in use)
 main/graph_connector.py
 
+# Node.js
+node_modules/
+package-lock.json
+
 # Claude Code local settings
 .claude/settings.local.json
 .claude/settings.json
