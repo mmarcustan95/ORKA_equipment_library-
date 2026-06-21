@@ -414,11 +414,17 @@ body {
 
 /* Collapsible card body (#6) */
 .card-collapsible {
-    display: none;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease-out;
+}
+
+.card-collapsible>div {
+    overflow: hidden;
 }
 
 .card.expanded .card-collapsible {
-    display: block;
+    grid-template-rows: 1fr;
 }
 
 .card-body h4 {
@@ -667,7 +673,9 @@ textarea:focus {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .site-footer {
@@ -803,10 +811,12 @@ textarea:focus {
     border-radius: 16px;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 100px);
+    max-height: min(750px, calc(100vh - 100px));
+    min-height: 250px;
     overflow: hidden;
     position: sticky;
     top: 80px;
+    transition: height 0.2s ease, max-height 0.2s ease;
 }
 
 .upload-panel {
@@ -839,7 +849,7 @@ textarea:focus {
 /* ── Chat messages area ── */
 
 .chat-messages {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
     padding: 0.5rem 0;
     display: flex;
@@ -848,8 +858,14 @@ textarea:focus {
     scrollbar-color: var(--border) transparent;
 }
 
-.chat-messages::-webkit-scrollbar { width: 4px; }
-.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .chat-messages::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 2px;
@@ -864,8 +880,8 @@ textarea:focus {
     width: 100%;
 }
 
-.ai-bubble + .user-bubble,
-.user-bubble + .ai-bubble {
+.ai-bubble+.user-bubble,
+.user-bubble+.ai-bubble {
     border-top: 1px solid rgba(30, 58, 138, 0.3);
 }
 
@@ -895,18 +911,31 @@ textarea:focus {
 }
 
 /* Markdown content inside AI messages */
-.bubble-body strong { font-weight: 600; }
-.bubble-body em { font-style: italic; color: #cbd5e1; }
+.bubble-body strong {
+    font-weight: 600;
+}
 
-.bubble-body p { margin-bottom: 0.45rem; }
-.bubble-body p:last-child { margin-bottom: 0; }
+.bubble-body em {
+    font-style: italic;
+    color: #cbd5e1;
+}
+
+.bubble-body p {
+    margin-bottom: 0.45rem;
+}
+
+.bubble-body p:last-child {
+    margin-bottom: 0;
+}
 
 .bubble-body ul,
 .bubble-body ol {
     margin: 0.35rem 0 0.35rem 1.3rem;
 }
 
-.bubble-body li { margin-bottom: 0.2rem; }
+.bubble-body li {
+    margin-bottom: 0.2rem;
+}
 
 .bubble-body h3 {
     font-size: 1rem;
@@ -968,7 +997,9 @@ textarea:focus {
 }
 
 /* Error state */
-.error-bubble .bubble-body { color: #fca5a5; }
+.error-bubble .bubble-body {
+    color: #fca5a5;
+}
 
 /* Typing dots */
 .typing-dots {
@@ -988,12 +1019,27 @@ textarea:focus {
     animation: bounce 1.2s infinite;
 }
 
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
 
 @keyframes bounce {
-    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-    40%            { transform: translateY(-6px); opacity: 1; }
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
 }
 
 /* ── Sources block ── */
@@ -1017,7 +1063,9 @@ textarea:focus {
     transition: color 0.15s;
 }
 
-.sources-toggle:hover { color: var(--accent); }
+.sources-toggle:hover {
+    color: var(--accent);
+}
 
 .sources-list {
     display: none;
@@ -1026,7 +1074,9 @@ textarea:focus {
     gap: 0.3rem;
 }
 
-.sources-list.open { display: flex; }
+.sources-list.open {
+    display: flex;
+}
 
 .source-group-label {
     font-size: 0.68rem;
@@ -1055,17 +1105,25 @@ textarea:focus {
     flex-shrink: 0;
 }
 
-.entry-chip .source-type-dot { background: var(--accent); }
-.doc-chip   .source-type-dot { background: #60a5fa; }
+.entry-chip .source-type-dot {
+    background: var(--accent);
+}
 
-.source-name { color: var(--text-primary); }
+.doc-chip .source-type-dot {
+    background: #60a5fa;
+}
+
+.source-name {
+    color: var(--text-primary);
+}
+
 .source-phase {
     color: var(--text-secondary);
     font-size: 0.7rem;
     margin-left: auto;
 }
 
-/* ── Chat input bar (Claude-style) ── */
+/* ── AI prompt composer ── */
 
 .chat-input-area {
     flex-shrink: 0;
@@ -1073,51 +1131,143 @@ textarea:focus {
     border-top: 1px solid var(--border);
 }
 
-.chat-input-wrapper {
-    position: relative;
-    background: var(--bg-dark);
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    display: flex;
-    align-items: flex-end;
-    transition: border-color 0.2s, box-shadow 0.2s;
+.ai-prompt {
+    background: rgba(0, 45, 91, 0.55);
 }
 
-.chat-input-wrapper:focus-within {
+.ai-prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.55rem;
+    padding: 0 0.25rem;
+}
+
+.ai-prompt-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--text-primary);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.model-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 8px;
+    background: rgba(255, 184, 28, 0.16);
+    border: 1px solid rgba(255, 184, 28, 0.26);
+    color: var(--accent);
+    font-size: 0.58rem;
+    font-weight: 800;
+}
+
+.ai-prompt-mode {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.ai-prompt-box {
+    position: relative;
+    background: rgba(0, 45, 91, 0.94);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: visible;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.ai-prompt-box:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(255, 184, 28, 0.07);
+    background: rgba(0, 45, 91, 1);
 }
 
 #chat-input {
-    flex: 1;
+    display: block;
+    width: 100%;
     background: transparent;
     border: none;
     color: white;
-    padding: 0.8rem 0.5rem 0.8rem 1rem;
+    padding: 0.95rem 1rem 0.7rem;
     font-size: 0.92rem;
     resize: none;
     outline: none;
     line-height: 1.5;
-    min-height: 46px;
+    min-height: 72px;
     max-height: 160px;
     overflow-y: auto;
     font-family: inherit;
 }
 
-#chat-input::placeholder { color: rgba(148, 163, 184, 0.5); }
+#chat-input::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+.ai-prompt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    min-height: 52px;
+    padding: 0.5rem;
+    border-top: 1px solid rgba(30, 58, 138, 0.42);
+    background: rgba(0, 34, 70, 0.58);
+    border-radius: 0 0 14px 14px;
+}
+
+.prompt-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.tool-button {
+    min-height: 34px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(255, 255, 255, 0.045);
+    color: var(--text-primary);
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+
+.tool-button:hover {
+    background: rgba(255, 184, 28, 0.11);
+    border-color: rgba(255, 184, 28, 0.34);
+    color: var(--accent);
+}
+
+.tool-button {
+    width: 34px;
+    padding: 0;
+}
+
+.tool-button svg {
+    width: 1rem;
+    height: 1rem;
+}
 
 .btn-send {
     background: var(--accent);
     color: var(--bg-dark);
     border: none;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    margin: 6px;
     flex-shrink: 0;
     transition: background 0.2s, transform 0.15s, opacity 0.2s;
 }
@@ -1133,7 +1283,11 @@ textarea:focus {
     transform: none;
 }
 
-.btn-send svg { display: block; }
+.btn-send svg {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+}
 
 .input-hint {
     margin-top: 0.35rem;
@@ -1194,7 +1348,9 @@ textarea:focus {
     font-size: 0.8rem;
 }
 
-.drop-icon { font-size: 1.5rem; }
+.drop-icon {
+    font-size: 1.5rem;
+}
 
 .upload-status {
     margin-top: 0.75rem;
@@ -1204,7 +1360,9 @@ textarea:focus {
     line-height: 1.5;
 }
 
-.upload-status.hidden { display: none; }
+.upload-status.hidden {
+    display: none;
+}
 
 .upload-status--loading {
     background: rgba(255, 184, 28, 0.08);
@@ -1285,4 +1443,47 @@ textarea:focus {
     .chat-input-area {
         padding: 0.75rem 1rem 0.875rem;
     }
+
+    .ai-prompt-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .ai-prompt-toolbar {
+        gap: 0.5rem;
+    }
+
+    .prompt-tools {
+        flex: 1;
+    }
+}
+
+/* Cutout Card Style (Replicating Cult UI shape) */
+.cutout-card {
+    position: relative;
+    /* Uses a clip path to cut the bottom-right corner */
+    clip-path: polygon(0 0,
+            100% 0,
+            100% calc(100% - 24px),
+            calc(100% - 24px) 100%,
+            0 100%);
+}
+
+.cutout-card::before {
+    /* Adds a pseudo-element border to the clipped area since clip-path cuts off normal borders */
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    right: -24px;
+    width: 34px;
+    height: 1px;
+    background-color: var(--border);
+    transform: rotate(-45deg);
+    transform-origin: bottom left;
+    transition: background-color 0.2s ease;
+}
+
+.cutout-card:hover::before {
+    background-color: var(--accent);
 }

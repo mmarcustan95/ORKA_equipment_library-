@@ -85,7 +85,7 @@ function renderCard(entry) {
     }).join('');
 
     return `
-        <article class="card" data-id="${entry.id}">
+        <article class="card cutout-card" data-id="${entry.id}">
             <div class="card-header" onclick="toggleCard('${entry.id}')">
                 <div class="header-main">
                     <h3 class="equipment-name">${entry.equipment_system} ${renderModelNumber(entry.model_number)}</h3>
@@ -98,27 +98,30 @@ function renderCard(entry) {
                     <button class="btn-delete" onclick="deleteEntry('${entry.id}')" title="Delete Entry">&times;</button>
                 </div>
             </div>
+            
             <div class="card-collapsible">
-                <div class="card-body">
-                    ${renderOutcome(entry.intended_outcome)}
-                    <div class="obstacle-box">
-                        <h4>Obstacle Encountered</h4>
-                        <p>${entry.obstacle}</p>
-                    </div>
-                    <div class="resolution-box">
-                        <div class="resolution-header">
-                            <h4>Resolution / Learning</h4>
-                            <button class="btn-copy" onclick="copyResolution('${entry.id}')" title="Copy resolution text">📋</button>
+                <div>
+                    <div class="card-body">
+                        ${renderOutcome(entry.intended_outcome)}
+                        <div class="obstacle-box">
+                            <h4>Obstacle Encountered</h4>
+                            <p>${entry.obstacle}</p>
                         </div>
-                        <p id="resolution-${entry.id}">${entry.resolution}</p>
+                        <div class="resolution-box">
+                            <div class="resolution-header">
+                                <h4>Resolution / Learning</h4>
+                                <button class="btn-copy" onclick="copyResolution('${entry.id}')" title="Copy resolution text">📋</button>
+                            </div>
+                            <p id="resolution-${entry.id}">${entry.resolution}</p>
+                        </div>
                     </div>
-                </div>
-                <div class="card-footer">
-                    <div class="footer-left">
-                        <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
-                        <div class="keywords-list">${keywords}</div>
+                    <div class="card-footer">
+                        <div class="footer-left">
+                            <span class="date">${new Date(entry.date_logged).toLocaleDateString()}</span>
+                            <div class="keywords-list">${keywords}</div>
+                        </div>
+                        ${renderAttachment(entry.attachments)}
                     </div>
-                    ${renderAttachment(entry.attachments)}
                 </div>
             </div>
         </article>
@@ -156,10 +159,10 @@ function renderEntries(entries) {
 function getSortedEntries(entries) {
     return [...entries].sort((a, b) => {
         switch (sortOrder) {
-            case 'oldest':    return new Date(a.date_logged) - new Date(b.date_logged);
+            case 'oldest': return new Date(a.date_logged) - new Date(b.date_logged);
             case 'equipment': return a.equipment_system.localeCompare(b.equipment_system);
-            case 'project':   return a.project_name.localeCompare(b.project_name);
-            default:          return new Date(b.date_logged) - new Date(a.date_logged);
+            case 'project': return a.project_name.localeCompare(b.project_name);
+            default: return new Date(b.date_logged) - new Date(a.date_logged);
         }
     });
 }
@@ -198,13 +201,13 @@ function applyFilters() {
 
 function updateURL() {
     const params = new URLSearchParams();
-    if (searchInput.value)      params.set('search', searchInput.value);
-    if (activeFilter)           params.set('phase', activeFilter);
-    if (activeConsultant)       params.set('consultant', activeConsultant);
-    if (activeKeyword)          params.set('keyword', activeKeyword);
+    if (searchInput.value) params.set('search', searchInput.value);
+    if (activeFilter) params.set('phase', activeFilter);
+    if (activeConsultant) params.set('consultant', activeConsultant);
+    if (activeKeyword) params.set('keyword', activeKeyword);
     if (sortOrder !== 'newest') params.set('sort', sortOrder);
-    if (dateFrom)               params.set('from', dateFrom);
-    if (dateTo)                 params.set('to', dateTo);
+    if (dateFrom) params.set('from', dateFrom);
+    if (dateTo) params.set('to', dateTo);
     const qs = params.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
 }
@@ -219,13 +222,13 @@ function restoreFromURL() {
     const from = params.get('from');
     const to = params.get('to');
 
-    if (search)     searchInput.value = search;
-    if (phase)      { activeFilter = phase; filterTags.forEach(t => t.classList.toggle('active', t.getAttribute('data-filter') === phase)); }
+    if (search) searchInput.value = search;
+    if (phase) { activeFilter = phase; filterTags.forEach(t => t.classList.toggle('active', t.getAttribute('data-filter') === phase)); }
     if (consultant) { activeConsultant = consultant; consultantFilter.value = consultant; }
-    if (keyword)    activeKeyword = keyword;
-    if (sort)       { sortOrder = sort; sortSelect.value = sort; }
-    if (from)       { dateFrom = from; dateFromInput.value = from; }
-    if (to)         { dateTo = to; dateToInput.value = to; }
+    if (keyword) activeKeyword = keyword;
+    if (sort) { sortOrder = sort; sortSelect.value = sort; }
+    if (from) { dateFrom = from; dateFromInput.value = from; }
+    if (to) { dateTo = to; dateToInput.value = to; }
 }
 
 function exportCSV() {
@@ -235,8 +238,8 @@ function exportCSV() {
         e.obstacle, e.resolution, e.keywords.join('; '), e.attachments || ''
     ].map(v => `"${String(v).replace(/"/g, '""')}"`));
 
-    const headers = ['Date','Project','Consultant','Equipment','Model','Phase',
-                     'Intended Outcome','Obstacle','Resolution','Keywords','Attachment'];
+    const headers = ['Date', 'Project', 'Consultant', 'Equipment', 'Model', 'Phase',
+        'Intended Outcome', 'Obstacle', 'Resolution', 'Keywords', 'Attachment'];
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -297,34 +300,34 @@ function normalizeKeywords(keywords) {
 function fillForm(data) {
     const today = new Date().toISOString().split('T')[0];
     const fields = {
-        project_name:     data.project_name || '',
-        consultant:       data.consultant || '',
+        project_name: data.project_name || '',
+        consultant: data.consultant || '',
         equipment_system: data.equipment_system || '',
-        model_number:     data.model_number || '',
+        model_number: data.model_number || '',
         validation_phase: data.validation_phase || 'URS',
         intended_outcome: data.intended_outcome || '',
-        obstacle:         data.obstacle || '',
-        resolution:       data.resolution || '',
-        date_logged:      data.date_logged || today,
-        attachments:      data.attachments || '',
-        keywords:         normalizeKeywords(data.keywords),
+        obstacle: data.obstacle || '',
+        resolution: data.resolution || '',
+        date_logged: data.date_logged || today,
+        attachments: data.attachments || '',
+        keywords: normalizeKeywords(data.keywords),
     };
     Object.entries(fields).forEach(([id, value]) => { document.getElementById(id).value = value; });
 }
 
 function getFormData() {
     return {
-        project_name:     document.getElementById('project_name').value,
-        consultant:       document.getElementById('consultant').value,
+        project_name: document.getElementById('project_name').value,
+        consultant: document.getElementById('consultant').value,
         equipment_system: document.getElementById('equipment_system').value,
-        model_number:     document.getElementById('model_number').value,
+        model_number: document.getElementById('model_number').value,
         validation_phase: document.getElementById('validation_phase').value,
         intended_outcome: document.getElementById('intended_outcome').value,
-        obstacle:         document.getElementById('obstacle').value,
-        resolution:       document.getElementById('resolution').value,
-        date_logged:      document.getElementById('date_logged').value,
-        attachments:      document.getElementById('attachments').value,
-        keywords:         document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(Boolean),
+        obstacle: document.getElementById('obstacle').value,
+        resolution: document.getElementById('resolution').value,
+        date_logged: document.getElementById('date_logged').value,
+        attachments: document.getElementById('attachments').value,
+        keywords: document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(Boolean),
     };
 }
 
@@ -341,7 +344,7 @@ closeBtn.onclick = () => {
 };
 
 function formHasContent() {
-    return ['project_name','consultant','equipment_system','intended_outcome','obstacle','resolution']
+    return ['project_name', 'consultant', 'equipment_system', 'intended_outcome', 'obstacle', 'resolution']
         .some(id => document.getElementById(id).value.trim() !== '');
 }
 
@@ -397,10 +400,10 @@ function filterChanged(fn) {
 }
 
 consultantFilter.addEventListener('change', filterChanged(() => { activeConsultant = consultantFilter.value; }));
-sortSelect.addEventListener('change',       filterChanged(() => { sortOrder = sortSelect.value; }));
-dateFromInput.addEventListener('change',    filterChanged(() => { dateFrom = dateFromInput.value || null; }));
-dateToInput.addEventListener('change',      filterChanged(() => { dateTo = dateToInput.value || null; }));
-searchInput.addEventListener('input',       filterChanged(() => { activeKeyword = null; }));
+sortSelect.addEventListener('change', filterChanged(() => { sortOrder = sortSelect.value; }));
+dateFromInput.addEventListener('change', filterChanged(() => { dateFrom = dateFromInput.value || null; }));
+dateToInput.addEventListener('change', filterChanged(() => { dateTo = dateToInput.value || null; }));
+searchInput.addEventListener('input', filterChanged(() => { activeKeyword = null; }));
 
 exportBtn.addEventListener('click', exportCSV);
 
