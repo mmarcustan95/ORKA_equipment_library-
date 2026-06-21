@@ -104,14 +104,17 @@ async def chat(request: ChatRequest):
                 source_type="entry"
             ))
 
+        seen_docs = set()
         for row in doc_results:
             context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
-            sources.append(ChatSources(
-                source_id=str(row["id"]),
-                equipment_system=row["equipment_tag"] or row["filename"],
-                phase="N/A",
-                source_type="document"
-            ))
+            if row["filename"] not in seen_docs:
+                seen_docs.add(row["filename"])
+                sources.append(ChatSources(
+                    source_id=str(row["id"]),
+                    equipment_system=row["equipment_tag"] or row["filename"],
+                    phase="N/A",
+                    source_type="document"
+                ))
         
         system_prompt = """You are an internal assistant for ORKA Consulting Partners.
         Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from.
