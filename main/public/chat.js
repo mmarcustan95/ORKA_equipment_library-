@@ -59,7 +59,7 @@ chatForm.addEventListener('submit', async (e) => {
 function appendUserBubble(text) {
     const div = document.createElement('div');
     div.className = 'user-bubble';
-    div.innerHTML = `<div class="bubble-body"><p>${escapeHtml(text)}</p></div>`;
+    div.innerHTML = `<div class="bubble-body"><p>${escapeHtml(text).replace(/\n/g, '<br>')}</p></div>`;
     messagesEl.appendChild(div);
     scrollToBottom();
 }
@@ -67,12 +67,11 @@ function appendUserBubble(text) {
 function appendAiBubble(answer, sources) {
     const div = document.createElement('div');
     div.className = 'ai-bubble';
-
     const sourcesHtml = buildSourcesHtml(sources);
     div.innerHTML = `
-        <div class="bubble-icon">🤖</div>
+        <div class="bubble-icon">AI</div>
         <div class="bubble-body">
-            <div class="answer-text">${formatAnswer(answer)}</div>
+            ${formatAnswer(answer)}
             ${sourcesHtml}
         </div>
     `;
@@ -84,7 +83,7 @@ function appendTypingIndicator() {
     const div = document.createElement('div');
     div.className = 'ai-bubble';
     div.innerHTML = `
-        <div class="bubble-icon">🤖</div>
+        <div class="bubble-icon">AI</div>
         <div class="bubble-body">
             <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
@@ -98,7 +97,7 @@ function appendErrorBubble(msg) {
     const div = document.createElement('div');
     div.className = 'ai-bubble error-bubble';
     div.innerHTML = `
-        <div class="bubble-icon">⚠️</div>
+        <div class="bubble-icon">!</div>
         <div class="bubble-body"><p>${escapeHtml(msg)}</p></div>
     `;
     messagesEl.appendChild(div);
@@ -145,9 +144,65 @@ function toggleSources(btn) {
 }
 
 function formatAnswer(text) {
-    return escapeHtml(text)
+    // Extract code blocks first so their content isn't processed as markdown
+    const codeBlocks = [];
+    let src = text.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+        const i = codeBlocks.length;
+        codeBlocks.push(escapeHtml(code.trimEnd()));
+        return `\x00CODE${i}\x00`;
+    });
+
+    // Escape remaining HTML, then restore code blocks as <pre><code>
+    src = escapeHtml(src);
+    src = src.replace(/\x00CODE(\d+)\x00/g, (_, i) =>
+        `<pre><code>${codeBlocks[i]}</code></pre>`
+    );
+
+    // Inline formatting
+    src = src
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Process line-by-line for lists and headings
+    const lines = src.split('\n');
+    let html = '';
+    let inUl = false, inOl = false;
+
+    const closeList = () => {
+        if (inUl) { html += '</ul>'; inUl = false; }
+        if (inOl) { html += '</ol>'; inOl = false; }
+    };
+
+    for (const line of lines) {
+        const bullet = line.match(/^[-*]\s+(.+)/);
+        const num    = line.match(/^\d+\.\s+(.+)/);
+        const h3     = line.match(/^###?\s+(.+)/);
+        const h2     = line.match(/^##\s+(.+)/);
+
+        if (bullet) {
+            if (inOl) { html += '</ol>'; inOl = false; }
+            if (!inUl) { html += '<ul>'; inUl = true; }
+            html += `<li>${bullet[1]}</li>`;
+        } else if (num) {
+            if (inUl) { html += '</ul>'; inUl = false; }
+            if (!inOl) { html += '<ol>'; inOl = true; }
+            html += `<li>${num[1]}</li>`;
+        } else {
+            closeList();
+            if (h3) {
+                html += `<h3>${h3[1]}</h3>`;
+            } else if (h2) {
+                html += `<h4>${h2[1]}</h4>`;
+            } else if (line.trim() === '' || line.startsWith('\x00')) {
+                html += line;
+            } else {
+                html += `<p>${line}</p>`;
+            }
+        }
+    }
+
+    closeList();
+    return html;
 }
 
 function escapeHtml(str) {

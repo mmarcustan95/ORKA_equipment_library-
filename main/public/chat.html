@@ -32,17 +32,24 @@
             </div>
 
             <div id="chat-messages" class="chat-messages">
-                <div class="ai-bubble intro-bubble">
-                    <div class="bubble-icon">🤖</div>
+                <div class="ai-bubble">
+                    <div class="bubble-icon">AI</div>
                     <div class="bubble-body">
                         <p>Hi! I'm the ORKA AI Assistant. Ask me anything about pharmaceutical equipment commissioning and qualification — I'll search our knowledge base first, then fall back to general knowledge if needed.</p>
                     </div>
                 </div>
             </div>
 
-            <form id="chat-form" class="chat-input-row" autocomplete="off">
-                <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
-                <button type="submit" id="send-btn" class="btn-send">Send</button>
+            <form id="chat-form" class="chat-input-area" autocomplete="off">
+                <div class="chat-input-wrapper">
+                    <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
+                    <button type="submit" id="send-btn" class="btn-send" aria-label="Send">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 13V3M3 8l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="input-hint">Shift+Enter for new line</p>
             </form>
         </section>
 
