@@ -41,6 +41,12 @@ async def root():
     return FileResponse("main/public/index.html")
 
 
+@app.get("/assistant")
+async def chat_page():
+    """Serve the AI chat and document upload page."""
+    return FileResponse("main/public/chat.html")
+
+
 @app.get("/entries", response_model=List[ValidationEntry], tags=["Entries"])
 async def get_entries():
     """

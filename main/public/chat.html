@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORKA AI Assistant</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">ORKA <span>Consulting Partners</span></div>
+            <div class="nav-links">
+                <a href="/" class="btn-secondary">📋 Knowledge Library</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="chat-layout container">
+
+        <!-- Left: Chat Panel -->
+        <section class="chat-panel">
+            <div class="panel-header">
+                <h2>AI Assistant</h2>
+                <p>Ask about equipment validation, C&Q procedures, or past lessons learned.</p>
+            </div>
+
+            <div id="chat-messages" class="chat-messages">
+                <div class="ai-bubble intro-bubble">
+                    <div class="bubble-icon">🤖</div>
+                    <div class="bubble-body">
+                        <p>Hi! I'm the ORKA AI Assistant. Ask me anything about pharmaceutical equipment commissioning and qualification — I'll search our knowledge base first, then fall back to general knowledge if needed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form id="chat-form" class="chat-input-row" autocomplete="off">
+                <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
+                <button type="submit" id="send-btn" class="btn-send">Send</button>
+            </form>
+        </section>
+
+        <!-- Right: Upload Panel -->
+        <aside class="upload-panel">
+            <div class="panel-header">
+                <h2>Upload Document</h2>
+                <p>Add manuals, SOPs, or training materials to the knowledge base.</p>
+            </div>
+
+            <form id="upload-form" class="upload-form">
+                <div class="form-group">
+                    <label for="upload-file">File <span class="file-hint">(PDF, DOCX, PPTX)</span></label>
+                    <div class="file-drop-zone" id="drop-zone">
+                        <input type="file" id="upload-file" accept=".pdf,.docx,.pptx" required>
+                        <div class="drop-label" id="drop-label">
+                            <span class="drop-icon">📄</span>
+                            <span>Click to browse or drag &amp; drop</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="equipment-tag">Equipment Tag</label>
+                    <input type="text" id="equipment-tag" placeholder="e.g. WFI-001, HVAC-AHU-2" required>
+                </div>
+                <div class="form-group">
+                    <label for="uploaded-by">Uploaded By</label>
+                    <input type="text" id="uploaded-by" placeholder="Your name" required>
+                </div>
+                <button type="submit" id="upload-btn" class="btn-submit">Upload &amp; Process</button>
+                <div id="upload-status" class="upload-status hidden"></div>
+            </form>
+
+            <div class="upload-tips">
+                <p class="tips-label">How it works</p>
+                <ul>
+                    <li>Document is split into chunks and embedded</li>
+                    <li>The AI references it automatically when relevant</li>
+                    <li>Supported: PDF, Word (.docx), PowerPoint (.pptx)</li>
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <script src="/static/chat.js"></script>
+</body>
+
+</html>
