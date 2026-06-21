@@ -294,6 +294,25 @@ class LocalDatabase:
             return entry
         finally:
             conn.close()
+    def insert_document_chunk(self, filename: str, file_type: str, content_chunk: str,
+                               chunk_index: int, equipment_tag: str, embedding: list,
+                               uploaded_by: str) -> None:
+        """Insert a single document chunk with its embedding into the documents table."""
+        if not self.db_url:
+            raise RuntimeError("insert_document_chunk requires a PostgreSQL/Supabase connection.")
+
+        conn = self._get_connection()
+        try:
+            with conn:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO documents
+                        (filename, file_type, content_chunk, chunk_index, equipment_tag, embedding, uploaded_by)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (filename, file_type, content_chunk, chunk_index, equipment_tag, embedding, uploaded_by))
+        finally:
+            conn.close()
+
     def search_documents(self, queryvector, top_k=5):
         """Search document chunks by vector similarity. Requires Supabase (pgvector) — not supported on SQLite."""
         if not self.db_url:
