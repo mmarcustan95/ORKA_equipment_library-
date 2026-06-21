@@ -21,10 +21,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from typing import List
 from main.models import ValidationEntry
+from main.models import ChatRequest, ChatResponse, ChatSources
 from main.local_db import test_db
 from main.vector_embed import VectorEmbedder
-
+from main.vector_embed import embed_text
 from fastapi.responses import FileResponse
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
@@ -70,19 +73,68 @@ async def create_entry(entry: ValidationEntry):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.put("/entries/{entry_id}", response_model=ValidationEntry, tags=["Entries"])
-async def update_entry(entry_id: str, entry: ValidationEntry):
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
+async def chat(request: ChatRequest):
     """
-    Update (fully replace) an existing validation entry by ID.
-
-    All fields in the request body overwrite the existing record.
-    Partial updates (PATCH) are not currently supported.
+    Handle chat requests and generate AI responses.
+    Stage 1: embed the question
+    Stage 2: search DB
+    Stage 3: build prompt
+    Stage 4: call LLM
     """
     try:
-        return test_db.update_entry(entry_id, entry)
+        # Stage 1
+        queryvector = embed_text(request.query)
+
+        # Stage 2 — search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
+        entry_results = test_db.search_entries(queryvector)
+        doc_results = test_db.search_documents(queryvector)
+
+        # Stage 3 — build context and sources from both tiers
+        context = ''
+        sources = []
+
+        for row in entry_results:
+            context += f"\n[ORKA Entry: {row['equipment_system']} | {row['validation_phase']}]\nID: {row['id']}\nObstacle: {row['obstacle']}\nResolution: {row['resolution']}\n---"
+            sources.append(ChatSources(
+                source_id=str(row["id"]),
+                equipment_system=row["equipment_system"],
+                phase=row["validation_phase"],
+                source_type="entry"
+            ))
+
+        for row in doc_results:
+            context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
+            sources.append(ChatSources(
+                source_id=str(row["id"]),
+                equipment_system=row["equipment_tag"] or row["filename"],
+                phase="N/A",
+                source_type="document"
+            ))
+        
+        system_prompt = """You are an internal assistant for ORKA Consulting Partners.
+        Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from.
+        If the context does not contain relevant information, respond using EXACTLY this format:
+
+        No relevant entries exist from ORKA knowledge base. [no relevant entries]
+
+        I will proceed to answer from my own AI general knowledge:
+
+        [your answer here]
+
+        Do not deviate from this format when falling back to general knowledge."""
+
+        full_prompt = f"{system_prompt}\n\nContext Entries:\n{context}\n\nUser Query: {request.query}"
+
+        # Stage 4
+        _client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        response = _client.models.generate_content(model='gemini-2.5-flash',contents=full_prompt)
+
+        return ChatResponse(answer=response.text, sources=sources)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.delete("/entries/{entry_id}", tags=["Entries"])

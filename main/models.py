@@ -52,3 +52,44 @@ class ValidationEntry(BaseModel):
     class Config:
         # Allows Pydantic to read data from ORM/database row objects as well as plain dicts
         from_attributes = True
+
+class ChatRequest(BaseModel):
+    """
+    Represents a chat request for the ORKA Equipment Knowledge Library.
+
+    Fields
+    ------
+    query: The user's question or prompt to the AI chat system.
+    context_entries: Optional list of ValidationEntry objects to provide context for the AI response.
+    """
+
+    query: str
+
+class ChatSources(BaseModel):
+    """
+    Represents the sources used to generate a chat response.
+
+    Fields
+    ------
+    source_id: The unique identifier of the source entry.
+    source_text: The text content of the source entry.
+    """
+
+    source_id: str
+    equipment_system: str
+    phase: str
+    source_type: str  # "entry" or "document"
+
+class ChatResponse(BaseModel):
+    """
+    Represents a chat response from the ORKA Equipment Knowledge Library.
+
+    Fields
+    ------
+    answer: The AI-generated answer to the user's query.
+    sources: list of ValidationEntry objects that were used to generate the answer.
+    """
+
+    answer: str
+    sources: List[ChatSources]
+

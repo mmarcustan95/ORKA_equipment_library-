@@ -15,8 +15,12 @@ exported at the bottom of this file.
 import sqlite3
 import json
 import os
+from pathlib import Path
 from typing import List
+from dotenv import load_dotenv
 from .models import ValidationEntry
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # Attempt to import the PostgreSQL driver. If it's not installed the app
 # falls back to SQLite automatically — no configuration needed for local dev.
@@ -288,6 +292,41 @@ class LocalDatabase:
                     entry_id  # WHERE clause — must be last in the tuple
                 ))
             return entry
+        finally:
+            conn.close()
+    def search_documents(self, queryvector, top_k=5):
+        """Search document chunks by vector similarity. Requires Supabase (pgvector) — not supported on SQLite."""
+        if not self.db_url:
+            raise RuntimeError("search_documents requires a PostgreSQL/Supabase connection. Set DATABASE_URL in your environment.")
+
+        conn = self._get_connection()
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)  # type: ignore
+            cur.execute("""
+                SELECT id, filename, file_type, content_chunk, chunk_index, equipment_tag
+                FROM documents
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, (queryvector, top_k))
+            return cur.fetchall()
+        finally:
+            conn.close()
+
+    def search_entries(self, queryvector, top_k=5):
+        """Search entries by vector similarity. Requires Supabase (pgvector) — not supported on SQLite."""
+        if not self.db_url:
+            raise RuntimeError("search_entries requires a PostgreSQL/Supabase connection. Set DATABASE_URL in your environment.")
+
+        conn = self._get_connection()
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)  # type: ignore
+            cur.execute("""
+                SELECT id, equipment_system, validation_phase, obstacle, resolution
+                FROM entries
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, (queryvector, top_k))
+            return cur.fetchall()
         finally:
             conn.close()
 
