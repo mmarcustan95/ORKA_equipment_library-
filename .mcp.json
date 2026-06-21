@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "cult-ui": {
+            "type": "http",
+            "url": "https://cult-ui.com/r/cult-ui.json"
+        }
+    }
+}
