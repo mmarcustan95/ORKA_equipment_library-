@@ -1127,12 +1127,15 @@ textarea:focus {
 
 .chat-input-area {
     flex-shrink: 0;
-    padding: 0.875rem 1.25rem 1rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-dark);
     border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10;
 }
 
 .ai-prompt {
-    background: rgba(0, 45, 91, 0.55);
+    /* Removed redundant background */
 }
 
 .ai-prompt-header {
@@ -1175,17 +1178,19 @@ textarea:focus {
 
 .ai-prompt-box {
     position: relative;
-    background: rgba(0, 45, 91, 0.94);
+    background: var(--bg-card);
     border: 1.5px solid var(--border);
     border-radius: 16px;
     overflow: visible;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    display: flex;
+    flex-direction: column;
 }
 
 .ai-prompt-box:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(255, 184, 28, 0.07);
-    background: rgba(0, 45, 91, 1);
+    background: var(--bg-card);
 }
 
 #chat-input {
@@ -1194,13 +1199,14 @@ textarea:focus {
     background: transparent;
     border: none;
     color: white;
-    padding: 0.95rem 1rem 0.7rem;
+    padding: 0.95rem 1rem 3.5rem;
+    /* extra padding at bottom for toolbar */
     font-size: 0.92rem;
     resize: none;
     outline: none;
     line-height: 1.5;
-    min-height: 72px;
-    max-height: 160px;
+    min-height: 100px;
+    max-height: 250px;
     overflow-y: auto;
     font-family: inherit;
 }
@@ -1210,22 +1216,23 @@ textarea:focus {
 }
 
 .ai-prompt-toolbar {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.8rem;
-    min-height: 52px;
-    padding: 0.5rem;
-    border-top: 1px solid rgba(30, 58, 138, 0.42);
-    background: rgba(0, 34, 70, 0.58);
-    border-radius: 0 0 14px 14px;
+    pointer-events: none;
+    /* Let clicks pass through toolbar background */
 }
 
 .prompt-tools {
     display: flex;
     align-items: center;
     gap: 0.45rem;
-    min-width: 0;
+    pointer-events: auto;
+    /* Enable clicks on buttons */
 }
 
 .tool-button {
@@ -1269,6 +1276,8 @@ textarea:focus {
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
+    pointer-events: auto;
+    /* Enable clicks */
     transition: background 0.2s, transform 0.15s, opacity 0.2s;
 }
 
@@ -1448,14 +1457,6 @@ textarea:focus {
         align-items: flex-start;
         flex-direction: column;
         gap: 0.25rem;
-    }
-
-    .ai-prompt-toolbar {
-        gap: 0.5rem;
-    }
-
-    .prompt-tools {
-        flex: 1;
     }
 }
 
