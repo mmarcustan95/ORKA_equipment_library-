@@ -6,3 +6,7 @@ python-dotenv
 pydantic
 psycopg2-binary
 google-genai
+pdfplumber
+python-docx
+python-pptx
+python-multipart
