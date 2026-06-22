@@ -72,6 +72,60 @@
         </div>
     </section>
 
+    <section id="document-upload" class="library-upload-section wide-container">
+        <aside class="upload-panel">
+            <div class="panel-header">
+                <h2>Upload Document</h2>
+                <p>Add manuals, SOPs, or training materials to the knowledge base.</p>
+            </div>
+
+            <form id="upload-form" class="upload-form">
+                <div class="form-group upload-file-group">
+                    <label for="upload-file">Files or Folder <span class="file-hint">(PDF, DOCX, PPTX)</span></label>
+                    <div class="file-drop-zone" id="drop-zone">
+                        <input type="file" id="upload-file" accept=".pdf,.docx,.pptx" multiple>
+                        <div class="drop-label" id="drop-label">
+                            <span class="drop-icon">DOC</span>
+                            <span>Click to browse files or drag &amp; drop</span>
+                        </div>
+                    </div>
+                    <input type="file" id="upload-folder" accept=".pdf,.docx,.pptx" webkitdirectory directory multiple hidden>
+                    <button type="button" id="folder-select-btn" class="btn-secondary folder-select-btn">Choose Folder</button>
+                </div>
+                <div class="form-group">
+                    <label for="equipment-tag">Equipment Tag</label>
+                    <input type="text" id="equipment-tag" placeholder="e.g. WFI-001, HVAC-AHU-2" required>
+                </div>
+                <div class="form-group">
+                    <label for="uploaded-by">Uploaded By</label>
+                    <input type="text" id="uploaded-by" placeholder="Your name" required>
+                </div>
+                <button type="submit" id="upload-btn" class="btn-submit">Upload &amp; Process</button>
+                <div id="upload-progress" class="upload-progress hidden" aria-live="polite">
+                    <div class="upload-progress-head">
+                        <span id="upload-progress-label">Preparing upload</span>
+                        <strong id="upload-progress-percent">0%</strong>
+                    </div>
+                    <div class="upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div id="upload-progress-bar" class="upload-progress-bar"></div>
+                    </div>
+                </div>
+                <div id="upload-status" class="upload-status hidden"></div>
+            </form>
+
+            <div class="upload-tips">
+                <p class="tips-label">How it works</p>
+                <ul>
+                    <li>Document is split into chunks and embedded</li>
+                    <li>The AI references it automatically when relevant</li>
+                    <li>Folders are scanned for supported document types</li>
+                    <li>Upload up to 8 files or 60 MB per batch</li>
+                    <li>Supported: PDF, Word (.docx), PowerPoint (.pptx)</li>
+                </ul>
+            </div>
+        </aside>
+    </section>
+
     <main class="library-shell wide-container">
         <section id="entries-grid" class="master-list" aria-label="Validation lessons">
             <div class="loader">Loading institutional knowledge...</div>
@@ -153,6 +207,7 @@
     </div>
 
     <script src="/static/script.js"></script>
+    <script src="/static/upload.js?v=library-upload-1"></script>
 </body>
 
 </html>

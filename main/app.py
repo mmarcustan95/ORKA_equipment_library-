@@ -28,6 +28,7 @@ from main.vector_embed import VectorEmbedder
 from main.vector_embed import embed_text
 from main.ingest_document import ingest_document, SUPPORTED_TYPES
 from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 from google import genai
 from google.genai import types
 
@@ -122,60 +123,69 @@ async def chat(request: ChatRequest):
     Stage 4: call LLM
     """
     try:
-        # Stage 1
-        queryvector = embed_text(request.query)
-
-        # Stage 2 - search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
-        entry_results = test_db.search_entries(queryvector)
-        doc_results = test_db.search_documents(queryvector)
-
-        # Stage 3 - build context and sources from both tiers
-        context = ''
-        sources = []
-
-        for row in entry_results:
-            context += f"\n[ORKA Entry: {row['equipment_system']} | {row['validation_phase']}]\nID: {row['id']}\nObstacle: {row['obstacle']}\nResolution: {row['resolution']}\n---"
-            sources.append(ChatSources(
-                source_id=str(row["id"]),
-                equipment_system=row["equipment_system"],
-                phase=row["validation_phase"],
-                source_type="entry"
-            ))
-
-        seen_docs = set()
-        for row in doc_results:
-            context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
-            if row["filename"] not in seen_docs:
-                seen_docs.add(row["filename"])
-                sources.append(ChatSources(
-                    source_id=str(row["id"]),
-                    equipment_system=row["equipment_tag"] or row["filename"],
-                    phase="N/A",
-                    source_type="document"
-                ))
-        
-        system_prompt = """You are an internal assistant for ORKA Consulting Partners.
-        Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from at the end of the entire response.
-        If the context does not contain relevant information, respond using EXACTLY this format:
-
-        No relevant entries exist from ORKA knowledge base. [no relevant entries]
-
-        I will proceed to answer from my own AI general knowledge:
-
-        [your answer here]
-
-        Do not deviate from this format when falling back to general knowledge."""
-
-        full_prompt = f"{system_prompt}\n\nContext Entries:\n{context}\n\nUser Query: {request.query}"
-
-        # Stage 4
-        _client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        response = _client.models.generate_content(model='gemini-2.5-flash',contents=full_prompt)
-
-        return ChatResponse(answer=response.text, sources=sources)
-
+        return await run_in_threadpool(generate_chat_response, request.query)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def generate_chat_response(query: str) -> ChatResponse:
+    """
+    Build a chat response using blocking SDK/database calls.
+
+    This runs in a worker thread so long document ingestion requests do not
+    monopolize the FastAPI event loop and delay chat responses.
+    """
+    # Stage 1
+    queryvector = embed_text(query)
+
+    # Stage 2 - search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
+    entry_results = test_db.search_entries(queryvector)
+    doc_results = test_db.search_documents(queryvector)
+
+    # Stage 3 - build context and sources from both tiers
+    context = ''
+    sources = []
+
+    for row in entry_results:
+        context += f"\n[ORKA Entry: {row['equipment_system']} | {row['validation_phase']}]\nID: {row['id']}\nObstacle: {row['obstacle']}\nResolution: {row['resolution']}\n---"
+        sources.append(ChatSources(
+            source_id=str(row["id"]),
+            equipment_system=row["equipment_system"],
+            phase=row["validation_phase"],
+            source_type="entry"
+        ))
+
+    seen_docs = set()
+    for row in doc_results:
+        context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
+        if row["filename"] not in seen_docs:
+            seen_docs.add(row["filename"])
+            sources.append(ChatSources(
+                source_id=str(row["id"]),
+                equipment_system=row["filename"] or row["equipment_tag"],
+                phase="N/A",
+                source_type="document"
+            ))
+    
+    system_prompt = """You are an internal assistant for ORKA Consulting Partners.
+    Answer ONLY using the context entries provided. For facts from ORKA entries, cite the Entry ID. For facts from uploaded manuals/documents, cite the document filename.
+    If the context does not contain relevant information, respond using EXACTLY this format:
+
+    No relevant entries exist from ORKA knowledge base. [no relevant entries]
+
+    I will proceed to answer from my own AI general knowledge:
+
+    [your answer here]
+
+    Do not deviate from this format when falling back to general knowledge."""
+
+    full_prompt = f"{system_prompt}\n\nContext Entries:\n{context}\n\nUser Query: {query}"
+
+    # Stage 4
+    _client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    response = _client.models.generate_content(model='gemini-2.5-flash',contents=full_prompt)
+
+    return ChatResponse(answer=response.text, sources=sources)
 
 
 
@@ -254,7 +264,8 @@ async def upload_document(
             try:
                 batch_bytes += file_size
                 upload.file.seek(0)
-                results.append(ingest_document(
+                results.append(await run_in_threadpool(
+                    ingest_document,
                     filename=filename,
                     file_obj=upload.file,
                     equipment_tag=equipment_tag,
