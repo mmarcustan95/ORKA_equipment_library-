@@ -72,8 +72,20 @@
         </div>
     </section>
 
-    <section id="document-upload" class="library-upload-section wide-container">
-        <aside class="upload-panel">
+    <main class="library-content wide-container">
+        <section class="library-shell">
+            <section id="entries-grid" class="master-list" aria-label="Validation lessons">
+                <div class="loader">Loading institutional knowledge...</div>
+            </section>
+            <section id="detail-pane" class="detail-pane" aria-live="polite">
+                <div class="empty-state">
+                    <span class="search-icon">Q</span>
+                    <span>Select a lesson to view details</span>
+                </div>
+            </section>
+        </section>
+
+        <aside id="document-upload" class="upload-panel library-upload-panel">
             <div class="panel-header">
                 <h2>Upload Document</h2>
                 <p>Add manuals, SOPs, or training materials to the knowledge base.</p>
@@ -124,18 +136,6 @@
                 </ul>
             </div>
         </aside>
-    </section>
-
-    <main class="library-shell wide-container">
-        <section id="entries-grid" class="master-list" aria-label="Validation lessons">
-            <div class="loader">Loading institutional knowledge...</div>
-        </section>
-        <section id="detail-pane" class="detail-pane" aria-live="polite">
-            <div class="empty-state">
-                <span class="search-icon">Q</span>
-                <span>Select a lesson to view details</span>
-            </div>
-        </section>
     </main>
 
     <div id="entry-modal" class="modal" aria-hidden="true">

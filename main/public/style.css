@@ -486,62 +486,6 @@ button {
     padding-top: 20px;
 }
 
-.library-upload-section {
-    flex: 0 0 auto;
-    margin-bottom: 18px;
-}
-
-.library-upload-section .upload-panel {
-    display: grid;
-    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(220px, 300px);
-    align-items: stretch;
-}
-
-.library-upload-section .panel-header,
-.library-upload-section .upload-form,
-.library-upload-section .upload-tips {
-    min-width: 0;
-}
-
-.library-upload-section .panel-header {
-    border-right: 1px solid var(--border-subtle);
-    border-bottom: 0;
-}
-
-.library-upload-section .upload-form {
-    display: grid;
-    grid-template-columns: minmax(220px, 1.3fr) minmax(160px, 0.85fr) minmax(160px, 0.85fr);
-    align-items: end;
-    gap: 14px;
-}
-
-.library-upload-section .upload-file-group {
-    align-self: stretch;
-}
-
-.library-upload-section .file-drop-zone {
-    margin-bottom: 10px;
-    padding: 18px 14px;
-}
-
-.library-upload-section .folder-select-btn {
-    margin-bottom: 0;
-}
-
-.library-upload-section .btn-submit {
-    grid-column: 2 / 4;
-}
-
-.library-upload-section .upload-progress,
-.library-upload-section .upload-status {
-    grid-column: 1 / -1;
-}
-
-.library-upload-section .upload-tips {
-    padding-top: 20px;
-    border-left: 1px solid var(--border-subtle);
-}
-
 .toolbar-row {
     display: flex;
     align-items: center;
@@ -677,12 +621,33 @@ textarea:focus,
     background: var(--border-subtle);
 }
 
-.library-shell {
+.library-content {
     flex: 1 1 auto;
     min-height: 0;
     display: grid;
-    grid-template-columns: 400px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 24px;
     border-top: 1px solid var(--border-subtle);
+    padding-top: 18px;
+    padding-bottom: 24px;
+}
+
+.library-shell {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 400px minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    background: var(--navy-900);
+}
+
+.library-upload-panel {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    align-self: stretch;
 }
 
 .master-list,
@@ -1599,22 +1564,18 @@ label {
         flex-wrap: wrap;
     }
 
-    .library-upload-section .upload-panel {
+    .library-content {
         grid-template-columns: 1fr;
-    }
-
-    .library-upload-section .panel-header {
-        border-right: 0;
-        border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .library-upload-section .upload-tips {
-        border-left: 0;
-        border-top: 1px solid var(--border-subtle);
+        overflow-y: auto;
     }
 
     .library-shell {
+        min-height: 560px;
         grid-template-columns: 340px minmax(0, 1fr);
+    }
+
+    .library-upload-panel {
+        max-height: none;
     }
 
     .chat-layout {
@@ -1659,17 +1620,8 @@ label {
         overflow: auto;
     }
 
-    .library-upload-section .upload-form {
-        grid-template-columns: 1fr;
-    }
-
-    .library-upload-section .btn-submit,
-    .library-upload-section .upload-progress,
-    .library-upload-section .upload-status {
-        grid-column: auto;
-    }
-
     .library-shell {
+        min-height: 0;
         grid-template-columns: 1fr;
     }
 
