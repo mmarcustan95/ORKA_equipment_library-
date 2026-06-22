@@ -19,7 +19,7 @@ import os
 import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from main.models import ValidationEntry
 from main.models import ChatRequest, ChatResponse, ChatSources
@@ -177,30 +177,58 @@ async def chat(request: ChatRequest):
 
 @app.post("/documents/upload", tags=["Documents"])
 async def upload_document(
-    file: UploadFile = File(...),
     equipment_tag: str = Form(...),
     uploaded_by: str = Form(...),
+    files: Optional[List[UploadFile]] = File(default=None),
+    file: Optional[List[UploadFile]] = File(default=None),
 ):
     """
-    Upload a PDF equipment manual or troubleshooting guide.
-    Extracts text, chunks it, generates embeddings, and stores all chunks
-    in the documents table for retrieval by the /chat endpoint.
+    Upload one file or a folder/multiple files of equipment documents.
+    Supported files are extracted, chunked, embedded, and stored in the
+    documents table for retrieval by the /chat endpoint.
     """
-    ext = "." + file.filename.lower().rsplit(".", 1)[-1]
-    if ext not in SUPPORTED_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Accepted: {', '.join(SUPPORTED_TYPES)}")
+    uploads = [upload for group in (files, file) if group for upload in group]
+    if not uploads:
+        raise HTTPException(status_code=400, detail="No files uploaded.")
 
     try:
-        file_bytes = await file.read()
-        result = ingest_document(
-            filename=file.filename,
-            file_bytes=file_bytes,
-            equipment_tag=equipment_tag,
-            uploaded_by=uploaded_by,
-        )
-        if result["status"] == "skipped":
-            raise HTTPException(status_code=422, detail=result["reason"])
-        return result
+        results = []
+        for upload in uploads:
+            filename = upload.filename or "unnamed"
+            ext = "." + filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+            if ext not in SUPPORTED_TYPES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"Unsupported file type: {ext or 'none'}",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                continue
+
+            file_bytes = await upload.read()
+            results.append(ingest_document(
+                filename=filename,
+                file_bytes=file_bytes,
+                equipment_tag=equipment_tag,
+                uploaded_by=uploaded_by,
+            ))
+
+        processed = sum(1 for result in results if result.get("status") == "complete")
+        skipped = len(results) - processed
+        chunks_stored = sum(result.get("chunks_stored", 0) for result in results)
+        chunks_failed = sum(result.get("chunks_failed", 0) for result in results)
+
+        return {
+            "status": "complete" if skipped == 0 else "partial" if processed else "skipped",
+            "files_received": len(results),
+            "files_processed": processed,
+            "files_skipped": skipped,
+            "chunks_stored": chunks_stored,
+            "chunks_failed": chunks_failed,
+            "accepted_extensions": sorted(SUPPORTED_TYPES),
+            "results": results,
+        }
     except HTTPException:
         raise
     except Exception as e:

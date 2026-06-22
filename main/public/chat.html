@@ -79,14 +79,16 @@
 
             <form id="upload-form" class="upload-form">
                 <div class="form-group">
-                    <label for="upload-file">File <span class="file-hint">(PDF, DOCX, PPTX)</span></label>
+                    <label for="upload-file">Files or Folder <span class="file-hint">(PDF, DOCX, PPTX)</span></label>
                     <div class="file-drop-zone" id="drop-zone">
-                        <input type="file" id="upload-file" accept=".pdf,.docx,.pptx" required>
+                        <input type="file" id="upload-file" accept=".pdf,.docx,.pptx" multiple>
                         <div class="drop-label" id="drop-label">
                             <span class="drop-icon">DOC</span>
-                            <span>Click to browse or drag &amp; drop</span>
+                            <span>Click to browse files or drag &amp; drop</span>
                         </div>
                     </div>
+                    <input type="file" id="upload-folder" accept=".pdf,.docx,.pptx" webkitdirectory directory multiple hidden>
+                    <button type="button" id="folder-select-btn" class="btn-secondary folder-select-btn">Choose Folder</button>
                 </div>
                 <div class="form-group">
                     <label for="equipment-tag">Equipment Tag</label>
@@ -105,6 +107,7 @@
                 <ul>
                     <li>Document is split into chunks and embedded</li>
                     <li>The AI references it automatically when relevant</li>
+                    <li>Folders are scanned for supported document types</li>
                     <li>Supported: PDF, Word (.docx), PowerPoint (.pptx)</li>
                 </ul>
             </div>

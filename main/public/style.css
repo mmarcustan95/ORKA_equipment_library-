@@ -1340,6 +1340,11 @@ label {
     background: rgba(245, 166, 35, 0.04);
 }
 
+.folder-select-btn {
+    width: 100%;
+    margin-bottom: 18px;
+}
+
 .file-drop-zone input[type="file"] {
     position: absolute;
     inset: 0;
@@ -1385,6 +1390,12 @@ label {
     border: 1px solid var(--green-border);
     background: var(--green-bg);
     color: var(--green-500);
+}
+
+.upload-status--partial {
+    border: 1px solid rgba(245, 166, 35, 0.25);
+    background: rgba(245, 166, 35, 0.10);
+    color: var(--gold-500);
 }
 
 .upload-status--error,

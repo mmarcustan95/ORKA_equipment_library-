@@ -6,12 +6,16 @@ const attachShortcut = document.getElementById('attach-shortcut');
 
 const uploadForm   = document.getElementById('upload-form');
 const uploadFile   = document.getElementById('upload-file');
+const uploadFolder = document.getElementById('upload-folder');
+const folderSelectBtn = document.getElementById('folder-select-btn');
 const dropZone     = document.getElementById('drop-zone');
 const dropLabel    = document.getElementById('drop-label');
 const uploadBtn    = document.getElementById('upload-btn');
 const uploadStatus = document.getElementById('upload-status');
 
 let isSubmitting = false;
+let selectedUploadFiles = [];
+const SUPPORTED_UPLOAD_EXTENSIONS = ['.pdf', '.docx', '.pptx'];
 
 // Auto-grow textarea up to ~5 lines
 chatInput.addEventListener('input', () => {
@@ -235,11 +239,93 @@ updateSendState();
 
 // Upload
 
-uploadFile.addEventListener('change', () => {
-    const f = uploadFile.files[0];
-    if (f) {
-        dropLabel.innerHTML = `<span class="drop-icon">OK</span><span>${escapeHtml(f.name)}</span>`;
+function isSupportedUpload(file) {
+    const name = file.name.toLowerCase();
+    return SUPPORTED_UPLOAD_EXTENSIONS.some(ext => name.endsWith(ext));
+}
+
+function getDisplayName(file) {
+    return file.webkitRelativePath || file.relativePath || file.name;
+}
+
+function updateDropLabel(files) {
+    if (!files.length) {
+        dropLabel.innerHTML = `<span class="drop-icon">DOC</span><span>Click to browse files or drag &amp; drop</span>`;
+        return;
     }
+
+    const supported = files.filter(isSupportedUpload).length;
+    const skipped = files.length - supported;
+    const label = files.length === 1
+        ? escapeHtml(getDisplayName(files[0]))
+        : `${supported} supported file${supported === 1 ? '' : 's'} selected${skipped ? `, ${skipped} skipped` : ''}`;
+    dropLabel.innerHTML = `<span class="drop-icon">OK</span><span>${label}</span>`;
+}
+
+function setSelectedUploadFiles(files) {
+    selectedUploadFiles = Array.from(files || []);
+    updateDropLabel(selectedUploadFiles);
+}
+
+async function collectDroppedFiles(dataTransfer) {
+    const items = Array.from(dataTransfer.items || []);
+    const entries = items
+        .map(item => item.webkitGetAsEntry ? item.webkitGetAsEntry() : null)
+        .filter(Boolean);
+
+    if (!entries.length) return Array.from(dataTransfer.files || []);
+
+    const files = [];
+    for (const entry of entries) {
+        files.push(...await readEntryFiles(entry));
+    }
+    return files;
+}
+
+function readEntryFiles(entry, prefix = '') {
+    return new Promise((resolve, reject) => {
+        if (entry.isFile) {
+            entry.file(file => {
+                file.relativePath = prefix + file.name;
+                resolve([file]);
+            }, reject);
+            return;
+        }
+
+        if (!entry.isDirectory) {
+            resolve([]);
+            return;
+        }
+
+        const reader = entry.createReader();
+        const children = [];
+        const readBatch = () => {
+            reader.readEntries(async batch => {
+                if (!batch.length) {
+                    const nested = await Promise.all(children.map(child => readEntryFiles(child, `${prefix}${entry.name}/`)));
+                    resolve(nested.flat());
+                    return;
+                }
+                children.push(...batch);
+                readBatch();
+            }, reject);
+        };
+        readBatch();
+    });
+}
+
+uploadFile.addEventListener('change', () => {
+    setSelectedUploadFiles(uploadFile.files);
+    uploadFolder.value = '';
+});
+
+uploadFolder.addEventListener('change', () => {
+    setSelectedUploadFiles(uploadFolder.files);
+    uploadFile.value = '';
+});
+
+folderSelectBtn.addEventListener('click', () => {
+    uploadFolder.click();
 });
 
 dropZone.addEventListener('dragover', (e) => {
@@ -247,31 +333,35 @@ dropZone.addEventListener('dragover', (e) => {
     dropZone.classList.add('drag-over');
 });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', (e) => {
+dropZone.addEventListener('drop', async (e) => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) {
-        const dt = new DataTransfer();
-        dt.items.add(f);
-        uploadFile.files = dt.files;
-        dropLabel.innerHTML = `<span class="drop-icon">OK</span><span>${escapeHtml(f.name)}</span>`;
-    }
+    setSelectedUploadFiles(await collectDroppedFiles(e.dataTransfer));
+    uploadFile.value = '';
+    uploadFolder.value = '';
 });
 
 uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const file       = uploadFile.files[0];
+    const files      = selectedUploadFiles;
     const tag        = document.getElementById('equipment-tag').value.trim();
     const uploadedBy = document.getElementById('uploaded-by').value.trim();
 
-    if (!file || !tag || !uploadedBy) return;
+    if (!files.length || !tag || !uploadedBy) return;
 
-    setUploadStatus('loading', 'Processing document...');
+    const supportedFiles = files.filter(isSupportedUpload);
+    if (!supportedFiles.length) {
+        setUploadStatus('error', `No supported files found. Accepted: ${SUPPORTED_UPLOAD_EXTENSIONS.join(', ')}`);
+        return;
+    }
+
+    setUploadStatus('loading', `Processing ${supportedFiles.length} document${supportedFiles.length === 1 ? '' : 's'}...`);
     uploadBtn.disabled = true;
 
     const formData = new FormData();
-    formData.append('file', file);
+    supportedFiles.forEach(file => {
+        formData.append('files', file, getDisplayName(file));
+    });
     formData.append('equipment_tag', tag);
     formData.append('uploaded_by', uploadedBy);
 
@@ -282,11 +372,10 @@ uploadForm.addEventListener('submit', async (e) => {
         if (!res.ok) {
             setUploadStatus('error', `${data.detail || 'Upload failed.'}`);
         } else {
-            setUploadStatus('success',
-                `<strong>${escapeHtml(data.filename)}</strong> ingested - ${data.chunks_stored} chunks stored.`
-            );
+            setUploadStatus(data.files_skipped ? 'partial' : 'success', buildUploadSummary(data));
             uploadForm.reset();
-            dropLabel.innerHTML = `<span class="drop-icon">DOC</span><span>Click to browse or drag &amp; drop</span>`;
+            selectedUploadFiles = [];
+            updateDropLabel(selectedUploadFiles);
         }
     } catch (err) {
         setUploadStatus('error', 'Upload failed. Check that the server is running.');
@@ -299,4 +388,18 @@ uploadForm.addEventListener('submit', async (e) => {
 function setUploadStatus(type, html) {
     uploadStatus.className = `upload-status upload-status--${type}`;
     uploadStatus.innerHTML = html;
+}
+
+function buildUploadSummary(data) {
+    if (!data.results) {
+        return `<strong>${escapeHtml(data.filename || 'Document')}</strong> ingested - ${data.chunks_stored || 0} chunks stored.`;
+    }
+
+    const skipped = data.files_skipped
+        ? ` ${data.files_skipped} skipped.`
+        : '';
+    const failedChunks = data.chunks_failed
+        ? ` ${data.chunks_failed} chunks failed.`
+        : '';
+    return `<strong>${data.files_processed}</strong> of <strong>${data.files_received}</strong> files ingested - ${data.chunks_stored} chunks stored.${skipped}${failedChunks}`;
 }
