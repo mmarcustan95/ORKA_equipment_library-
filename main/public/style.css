@@ -74,7 +74,7 @@ button {
 .wide-container {
     width: min(100%, 1400px);
     margin: 0 auto;
-    padding: 0 32px;
+    padding: 0 16px;
 }
 
 .navbar {
@@ -1591,7 +1591,7 @@ label {
 @media (max-width: 760px) {
     .container,
     .wide-container {
-        padding: 0 18px;
+        padding: 0 9px;
     }
 
     .navbar .container,
