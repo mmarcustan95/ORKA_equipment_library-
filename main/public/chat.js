@@ -362,15 +362,18 @@ uploadForm.addEventListener('submit', async (e) => {
     supportedFiles.forEach(file => {
         formData.append('files', file, getDisplayName(file));
     });
+    if (supportedFiles.length === 1) {
+        formData.append('file', supportedFiles[0], getDisplayName(supportedFiles[0]));
+    }
     formData.append('equipment_tag', tag);
     formData.append('uploaded_by', uploadedBy);
 
     try {
         const res = await fetch('/documents/upload', { method: 'POST', body: formData });
-        const data = await res.json();
+        const data = await readUploadResponse(res);
 
         if (!res.ok) {
-            setUploadStatus('error', `${data.detail || 'Upload failed.'}`);
+            setUploadStatus('error', formatUploadError(data, res.status));
         } else {
             setUploadStatus(data.files_skipped ? 'partial' : 'success', buildUploadSummary(data));
             uploadForm.reset();
@@ -388,6 +391,24 @@ uploadForm.addEventListener('submit', async (e) => {
 function setUploadStatus(type, html) {
     uploadStatus.className = `upload-status upload-status--${type}`;
     uploadStatus.innerHTML = html;
+}
+
+async function readUploadResponse(response) {
+    const text = await response.text();
+    if (!text) return {};
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        return { detail: text };
+    }
+}
+
+function formatUploadError(data, status) {
+    const detail = data.detail || data.message || 'Upload failed.';
+    if (Array.isArray(detail)) {
+        return `Upload failed (${status}): ${detail.map(item => item.msg || JSON.stringify(item)).join('; ')}`;
+    }
+    return `Upload failed (${status}): ${escapeHtml(String(detail))}`;
 }
 
 function buildUploadSummary(data) {

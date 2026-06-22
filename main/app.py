@@ -179,15 +179,27 @@ async def chat(request: ChatRequest):
 async def upload_document(
     equipment_tag: str = Form(...),
     uploaded_by: str = Form(...),
-    files: Optional[List[UploadFile]] = File(default=None),
-    file: Optional[List[UploadFile]] = File(default=None),
+    files: List[UploadFile] = File(default=[]),
+    file: Optional[UploadFile] = File(default=None),
 ):
     """
     Upload one file or a folder/multiple files of equipment documents.
     Supported files are extracted, chunked, embedded, and stored in the
     documents table for retrieval by the /chat endpoint.
     """
-    uploads = [upload for group in (files, file) if group for upload in group]
+    uploads = list(files)
+    if file is not None:
+        uploads.append(file)
+
+    deduped_uploads = []
+    seen_uploads = set()
+    for upload in uploads:
+        key = upload.filename or id(upload.file)
+        if key in seen_uploads:
+            continue
+        seen_uploads.add(key)
+        deduped_uploads.append(upload)
+    uploads = deduped_uploads
     if not uploads:
         raise HTTPException(status_code=400, detail="No files uploaded.")
 
