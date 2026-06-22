@@ -35,6 +35,10 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ORKA Equipment Knowledge Library")
 
+MAX_UPLOAD_FILES = int(os.getenv("MAX_UPLOAD_FILES", "8"))
+MAX_UPLOAD_FILE_BYTES = int(os.getenv("MAX_UPLOAD_FILE_MB", "15")) * 1024 * 1024
+MAX_UPLOAD_BATCH_BYTES = int(os.getenv("MAX_UPLOAD_BATCH_MB", "60")) * 1024 * 1024
+
 
 @app.get("/")
 async def root():
@@ -202,9 +206,15 @@ async def upload_document(
     uploads = deduped_uploads
     if not uploads:
         raise HTTPException(status_code=400, detail="No files uploaded.")
+    if len(uploads) > MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Too many files. Upload at most {MAX_UPLOAD_FILES} files per batch.",
+        )
 
     try:
         results = []
+        batch_bytes = 0
         for upload in uploads:
             filename = upload.filename or "unnamed"
             ext = "." + filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
@@ -216,15 +226,42 @@ async def upload_document(
                     "chunks_stored": 0,
                     "chunks_failed": 0,
                 })
+                await upload.close()
                 continue
 
-            file_bytes = await upload.read()
-            results.append(ingest_document(
-                filename=filename,
-                file_bytes=file_bytes,
-                equipment_tag=equipment_tag,
-                uploaded_by=uploaded_by,
-            ))
+            file_size = get_upload_size(upload)
+            if file_size > MAX_UPLOAD_FILE_BYTES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"File exceeds {MAX_UPLOAD_FILE_BYTES // (1024 * 1024)} MB limit",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                await upload.close()
+                continue
+            if batch_bytes + file_size > MAX_UPLOAD_BATCH_BYTES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"Batch exceeds {MAX_UPLOAD_BATCH_BYTES // (1024 * 1024)} MB limit",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                await upload.close()
+                continue
+
+            try:
+                batch_bytes += file_size
+                upload.file.seek(0)
+                results.append(ingest_document(
+                    filename=filename,
+                    file_obj=upload.file,
+                    equipment_tag=equipment_tag,
+                    uploaded_by=uploaded_by,
+                ))
+            finally:
+                await upload.close()
 
         processed = sum(1 for result in results if result.get("status") == "complete")
         skipped = len(results) - processed
@@ -245,6 +282,15 @@ async def upload_document(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def get_upload_size(upload: UploadFile) -> int:
+    """Return UploadFile size without reading it into memory."""
+    current = upload.file.tell()
+    upload.file.seek(0, os.SEEK_END)
+    size = upload.file.tell()
+    upload.file.seek(current)
+    return size
 
 
 @app.delete("/entries/{entry_id}", tags=["Entries"])

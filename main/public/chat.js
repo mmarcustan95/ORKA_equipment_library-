@@ -12,10 +12,19 @@ const dropZone     = document.getElementById('drop-zone');
 const dropLabel    = document.getElementById('drop-label');
 const uploadBtn    = document.getElementById('upload-btn');
 const uploadStatus = document.getElementById('upload-status');
+const uploadProgress = document.getElementById('upload-progress');
+const uploadProgressLabel = document.getElementById('upload-progress-label');
+const uploadProgressPercent = document.getElementById('upload-progress-percent');
+const uploadProgressTrack = document.querySelector('.upload-progress-track');
+const uploadProgressBar = document.getElementById('upload-progress-bar');
 
 let isSubmitting = false;
 let selectedUploadFiles = [];
+let processingProgressTimer = null;
 const SUPPORTED_UPLOAD_EXTENSIONS = ['.pdf', '.docx', '.pptx'];
+const MAX_UPLOAD_FILES = 8;
+const MAX_UPLOAD_FILE_BYTES = 15 * 1024 * 1024;
+const MAX_UPLOAD_BATCH_BYTES = 60 * 1024 * 1024;
 
 // Auto-grow textarea up to ~5 lines
 chatInput.addEventListener('input', () => {
@@ -265,6 +274,7 @@ function updateDropLabel(files) {
 function setSelectedUploadFiles(files) {
     selectedUploadFiles = Array.from(files || []);
     updateDropLabel(selectedUploadFiles);
+    resetUploadProgress();
 }
 
 async function collectDroppedFiles(dataTransfer) {
@@ -354,8 +364,14 @@ uploadForm.addEventListener('submit', async (e) => {
         setUploadStatus('error', `No supported files found. Accepted: ${SUPPORTED_UPLOAD_EXTENSIONS.join(', ')}`);
         return;
     }
+    const uploadLimitError = getUploadLimitError(supportedFiles);
+    if (uploadLimitError) {
+        setUploadStatus('error', uploadLimitError);
+        return;
+    }
 
     setUploadStatus('loading', `Processing ${supportedFiles.length} document${supportedFiles.length === 1 ? '' : 's'}...`);
+    setUploadProgress(2, 'Preparing upload');
     uploadBtn.disabled = true;
 
     const formData = new FormData();
@@ -369,18 +385,24 @@ uploadForm.addEventListener('submit', async (e) => {
     formData.append('uploaded_by', uploadedBy);
 
     try {
-        const res = await fetch('/documents/upload', { method: 'POST', body: formData });
-        const data = await readUploadResponse(res);
+        const uploadResult = await uploadWithProgress(formData);
+        const data = parseUploadResponse(uploadResult.body);
 
-        if (!res.ok) {
-            setUploadStatus('error', formatUploadError(data, res.status));
+        if (!uploadResult.ok) {
+            stopProcessingProgress();
+            setUploadProgress(100, 'Upload failed');
+            setUploadStatus('error', formatUploadError(data, uploadResult.status));
         } else {
+            stopProcessingProgress();
+            setUploadProgress(100, 'Ingestion complete');
             setUploadStatus(data.files_skipped ? 'partial' : 'success', buildUploadSummary(data));
             uploadForm.reset();
             selectedUploadFiles = [];
             updateDropLabel(selectedUploadFiles);
         }
     } catch (err) {
+        stopProcessingProgress();
+        setUploadProgress(100, 'Upload failed');
         setUploadStatus('error', 'Upload failed. Check that the server is running.');
         console.error(err);
     } finally {
@@ -393,13 +415,80 @@ function setUploadStatus(type, html) {
     uploadStatus.innerHTML = html;
 }
 
-async function readUploadResponse(response) {
-    const text = await response.text();
+function uploadWithProgress(formData) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/documents/upload');
+
+        xhr.upload.addEventListener('progress', (event) => {
+            if (!event.lengthComputable) {
+                setUploadProgress(12, 'Uploading documents');
+                return;
+            }
+            const uploadPercent = Math.round((event.loaded / event.total) * 70);
+            setUploadProgress(Math.max(2, Math.min(uploadPercent, 70)), 'Uploading documents');
+        });
+
+        xhr.upload.addEventListener('load', () => {
+            setUploadProgress(72, 'Upload complete. Ingesting documents');
+            startProcessingProgress();
+        });
+
+        xhr.addEventListener('load', () => {
+            resolve({
+                ok: xhr.status >= 200 && xhr.status < 300,
+                status: xhr.status,
+                body: xhr.responseText,
+            });
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Upload request failed.')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload request aborted.')));
+        xhr.send(formData);
+    });
+}
+
+function parseUploadResponse(text) {
     if (!text) return {};
     try {
         return JSON.parse(text);
     } catch (error) {
         return { detail: text };
+    }
+}
+
+function setUploadProgress(percent, label) {
+    const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+    uploadProgress.classList.remove('hidden');
+    uploadProgressLabel.textContent = label;
+    uploadProgressPercent.textContent = `${safePercent}%`;
+    uploadProgressTrack.setAttribute('aria-valuenow', String(safePercent));
+    uploadProgressBar.style.width = `${safePercent}%`;
+}
+
+function resetUploadProgress() {
+    stopProcessingProgress();
+    uploadProgress.classList.add('hidden');
+    uploadProgressLabel.textContent = 'Preparing upload';
+    uploadProgressPercent.textContent = '0%';
+    uploadProgressTrack.setAttribute('aria-valuenow', '0');
+    uploadProgressBar.style.width = '0%';
+}
+
+function startProcessingProgress() {
+    stopProcessingProgress();
+    let progress = 72;
+    processingProgressTimer = window.setInterval(() => {
+        progress = Math.min(96, progress + Math.max(1, Math.round((96 - progress) * 0.12)));
+        setUploadProgress(progress, 'Ingesting and embedding documents');
+        if (progress >= 96) stopProcessingProgress();
+    }, 900);
+}
+
+function stopProcessingProgress() {
+    if (processingProgressTimer) {
+        window.clearInterval(processingProgressTimer);
+        processingProgressTimer = null;
     }
 }
 
@@ -409,6 +498,30 @@ function formatUploadError(data, status) {
         return `Upload failed (${status}): ${detail.map(item => item.msg || JSON.stringify(item)).join('; ')}`;
     }
     return `Upload failed (${status}): ${escapeHtml(String(detail))}`;
+}
+
+function getUploadLimitError(files) {
+    if (files.length > MAX_UPLOAD_FILES) {
+        return `Too many files selected. Upload at most ${MAX_UPLOAD_FILES} files per batch.`;
+    }
+
+    const oversized = files.find(file => file.size > MAX_UPLOAD_FILE_BYTES);
+    if (oversized) {
+        return `${escapeHtml(getDisplayName(oversized))} is larger than ${formatBytes(MAX_UPLOAD_FILE_BYTES)}. Split or compress it before uploading.`;
+    }
+
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    if (totalBytes > MAX_UPLOAD_BATCH_BYTES) {
+        return `Selected files total ${formatBytes(totalBytes)}. Upload at most ${formatBytes(MAX_UPLOAD_BATCH_BYTES)} per batch.`;
+    }
+
+    return '';
+}
+
+function formatBytes(bytes) {
+    if (bytes >= 1024 * 1024) return `${Math.round(bytes / 1024 / 1024)} MB`;
+    if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${bytes} B`;
 }
 
 function buildUploadSummary(data) {
@@ -422,5 +535,8 @@ function buildUploadSummary(data) {
     const failedChunks = data.chunks_failed
         ? ` ${data.chunks_failed} chunks failed.`
         : '';
-    return `<strong>${data.files_processed}</strong> of <strong>${data.files_received}</strong> files ingested - ${data.chunks_stored} chunks stored.${skipped}${failedChunks}`;
+    const truncated = data.results.some(result => result.truncated)
+        ? ' Some large files were capped to prevent memory overload.'
+        : '';
+    return `<strong>${data.files_processed}</strong> of <strong>${data.files_received}</strong> files ingested - ${data.chunks_stored} chunks stored.${skipped}${failedChunks}${truncated}`;
 }

@@ -99,6 +99,15 @@
                     <input type="text" id="uploaded-by" placeholder="Your name" required>
                 </div>
                 <button type="submit" id="upload-btn" class="btn-submit">Upload &amp; Process</button>
+                <div id="upload-progress" class="upload-progress hidden" aria-live="polite">
+                    <div class="upload-progress-head">
+                        <span id="upload-progress-label">Preparing upload</span>
+                        <strong id="upload-progress-percent">0%</strong>
+                    </div>
+                    <div class="upload-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div id="upload-progress-bar" class="upload-progress-bar"></div>
+                    </div>
+                </div>
                 <div id="upload-status" class="upload-status hidden"></div>
             </form>
 
@@ -108,13 +117,14 @@
                     <li>Document is split into chunks and embedded</li>
                     <li>The AI references it automatically when relevant</li>
                     <li>Folders are scanned for supported document types</li>
+                    <li>Upload up to 8 files or 60 MB per batch</li>
                     <li>Supported: PDF, Word (.docx), PowerPoint (.pptx)</li>
                 </ul>
             </div>
         </aside>
     </main>
 
-    <script src="/static/chat.js?v=folder-upload-2"></script>
+    <script src="/static/chat.js?v=memory-safe-upload-1"></script>
 </body>
 
 </html>

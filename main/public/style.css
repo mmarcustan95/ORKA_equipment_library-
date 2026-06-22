@@ -1380,6 +1380,47 @@ label {
     display: none;
 }
 
+.upload-progress {
+    margin-top: 12px;
+}
+
+.upload-progress.hidden {
+    display: none;
+}
+
+.upload-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.upload-progress-head strong {
+    color: var(--gold-500);
+    font-size: 13px;
+}
+
+.upload-progress-track {
+    height: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    background: var(--navy-950);
+}
+
+.upload-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--gold-600), var(--gold-500), var(--gold-400));
+    box-shadow: var(--shadow-gold);
+    transition: width 0.25s ease;
+}
+
 .upload-status--loading {
     border: 1px solid rgba(245, 166, 35, 0.25);
     background: rgba(245, 166, 35, 0.10);
