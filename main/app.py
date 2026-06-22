@@ -20,6 +20,7 @@ import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from typing import List
+from uuid import UUID
 from main.models import ValidationEntry
 from main.models import ChatRequest, ChatResponse, ChatSources
 from main.local_db import test_db
@@ -37,7 +38,13 @@ app = FastAPI(title="ORKA Equipment Knowledge Library")
 
 @app.get("/")
 async def root():
-    """Serve the main frontend dashboard (index.html)."""
+    """Serve the landing page."""
+    return FileResponse("main/public/landing.html")
+
+
+@app.get("/library")
+async def library_page():
+    """Serve the equipment library dashboard."""
     return FileResponse("main/public/index.html")
 
 
@@ -86,6 +93,21 @@ async def create_entry(entry: ValidationEntry):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.put("/entries/{entry_id}", response_model=ValidationEntry, tags=["Entries"])
+async def update_entry(entry_id: str, entry: ValidationEntry):
+    """Update an existing validation lesson."""
+    try:
+        updated = test_db.update_entry(entry_id, entry)
+        try:
+            embedding = VectorEmbedder(entry).embed()
+            test_db.update_embedding(entry_id, embedding)
+        except Exception as embed_err:
+            logger.warning("Embedding update failed for entry %s: %s", entry_id, embed_err)
+        return updated.copy(update={"id": UUID(entry_id)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(request: ChatRequest):
     """
@@ -99,11 +121,11 @@ async def chat(request: ChatRequest):
         # Stage 1
         queryvector = embed_text(request.query)
 
-        # Stage 2 — search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
+        # Stage 2 - search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
         entry_results = test_db.search_entries(queryvector)
         doc_results = test_db.search_documents(queryvector)
 
-        # Stage 3 — build context and sources from both tiers
+        # Stage 3 - build context and sources from both tiers
         context = ''
         sources = []
 

@@ -116,7 +116,7 @@ function buildSourcesHtml(sources) {
     const entries  = sources.filter(s => s.source_type === 'entry');
     const docs     = sources.filter(s => s.source_type === 'document');
 
-    let html = '<div class="sources-block"><button class="sources-toggle" onclick="toggleSources(this)">📚 Sources (' + sources.length + ')</button><div class="sources-list">';
+    let html = '<div class="sources-block"><button class="sources-toggle" onclick="toggleSources(this)">Sources (' + sources.length + ')</button><div class="sources-list">';
 
     if (entries.length > 0) {
         html += `<p class="source-group-label">ORKA Knowledge Base</p>`;
@@ -146,7 +146,7 @@ function buildSourcesHtml(sources) {
 function toggleSources(btn) {
     const list = btn.nextElementSibling;
     const isOpen = list.classList.toggle('open');
-    btn.textContent = btn.textContent.replace(isOpen ? '▶' : '▼', isOpen ? '▼' : '▶');
+    btn.textContent = btn.textContent;
 }
 
 function formatAnswer(text) {
@@ -233,12 +233,12 @@ attachShortcut.addEventListener('click', () => {
 
 updateSendState();
 
-// ── Upload ────────────────────────────────────────────────────────────────────
+// Upload
 
 uploadFile.addEventListener('change', () => {
     const f = uploadFile.files[0];
     if (f) {
-        dropLabel.innerHTML = `<span class="drop-icon">✅</span><span>${escapeHtml(f.name)}</span>`;
+        dropLabel.innerHTML = `<span class="drop-icon">OK</span><span>${escapeHtml(f.name)}</span>`;
     }
 });
 
@@ -255,7 +255,7 @@ dropZone.addEventListener('drop', (e) => {
         const dt = new DataTransfer();
         dt.items.add(f);
         uploadFile.files = dt.files;
-        dropLabel.innerHTML = `<span class="drop-icon">✅</span><span>${escapeHtml(f.name)}</span>`;
+        dropLabel.innerHTML = `<span class="drop-icon">OK</span><span>${escapeHtml(f.name)}</span>`;
     }
 });
 
@@ -267,7 +267,7 @@ uploadForm.addEventListener('submit', async (e) => {
 
     if (!file || !tag || !uploadedBy) return;
 
-    setUploadStatus('loading', '⏳ Processing document...');
+    setUploadStatus('loading', 'Processing document...');
     uploadBtn.disabled = true;
 
     const formData = new FormData();
@@ -280,16 +280,16 @@ uploadForm.addEventListener('submit', async (e) => {
         const data = await res.json();
 
         if (!res.ok) {
-            setUploadStatus('error', `❌ ${data.detail || 'Upload failed.'}`);
+            setUploadStatus('error', `${data.detail || 'Upload failed.'}`);
         } else {
             setUploadStatus('success',
-                `✅ <strong>${escapeHtml(data.filename)}</strong> ingested — ${data.chunks_stored} chunks stored.`
+                `<strong>${escapeHtml(data.filename)}</strong> ingested - ${data.chunks_stored} chunks stored.`
             );
             uploadForm.reset();
-            dropLabel.innerHTML = `<span class="drop-icon">📄</span><span>Click to browse or drag &amp; drop</span>`;
+            dropLabel.innerHTML = `<span class="drop-icon">DOC</span><span>Click to browse or drag &amp; drop</span>`;
         }
     } catch (err) {
-        setUploadStatus('error', '❌ Upload failed. Check that the server is running.');
+        setUploadStatus('error', 'Upload failed. Check that the server is running.');
         console.error(err);
     } finally {
         uploadBtn.disabled = false;

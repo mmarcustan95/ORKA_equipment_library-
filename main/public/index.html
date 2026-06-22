@@ -4,91 +4,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ORKA Equipment Knowledge Library</title>
+    <title>ORKA Equipment Library</title>
     <link rel="stylesheet" href="/static/style.css">
-
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="library-page">
+    <div class="gold-hairline"></div>
     <nav class="navbar">
-        <div class="container">
-            <div class="logo"> ORKA <span>Consulting Partners</span></div>
+        <div class="wide-container">
+            <a class="logo" href="/">
+                <strong>ORKA</strong>
+                <span>Consulting Partners</span>
+            </a>
             <div class="nav-links">
-                <a href="https://orkacp.sharepoint.com/:f:/s/TeamOrka/IgCoil_VLXALRpGPwVXxpCI7AUm5VaWlNwjEyfZoCyiEYZQ?e=3PMQoA"
-                    target="_blank" class="btn-secondary">📂 SharePoint Library</a>
-                <a href="/assistant" class="btn-secondary">🤖 AI Assistant</a>
-                <button id="export-csv-btn" class="btn-secondary">📤 Export CSV</button>
-                <button id="add-entry-btn" class="btn-primary">+ Log New Lesson</button>
+                <a href="https://orkacp.sharepoint.com/:f:/s/TeamOrka/IgCoil_VLXALRpGPwVXxpCI7AUm5VaWlNwjEyfZoCyiEYZQ?e=3PMQoA" target="_blank" class="btn-secondary">SharePoint Library</a>
+                <a href="/assistant" class="btn-secondary">AI Assistant</a>
+                <button id="export-csv-btn" class="btn-secondary" type="button">Export CSV</button>
+                <button id="add-entry-btn" class="btn-primary" type="button">+ Log New Lesson</button>
             </div>
         </div>
     </nav>
 
-    <main class="container">
-        <header class="page-header">
-            <h1><span class="emoji">🐋</span> Equipment Knowledge Library <span class="emoji">🐋</span></h1>
-            <p>Institutional knowledge from the shop floor <span class="emoji">🏭</span> to the cloud <span
-                    class="emoji">☁️</span>.</p>
-        </header>
-
-        <section class="search-section">
-            <input type="text" id="search-input"
-                placeholder="🔍 Search by equipment, project, or keyword (e.g. Centrifuge)...">
-            <div class="filters">
-                <span class="filter-label">Phase:</span>
-                <button class="filter-tag" data-filter="URS">URS</button>
-                <button class="filter-tag" data-filter="FAT">FAT</button>
-                <button class="filter-tag" data-filter="SAT">SAT</button>
-                <button class="filter-tag" data-filter="IQ">IQ</button>
-                <button class="filter-tag" data-filter="OQ">OQ</button>
-                <button class="filter-tag" data-filter="PQ">PQ</button>
-                <button class="filter-tag" data-filter="Others">Others</button>
+    <section class="library-toolbar wide-container">
+        <div class="toolbar-row">
+            <div class="search-wrap">
+                <span class="search-icon">Q</span>
+                <input type="text" id="search-input" placeholder="Search by equipment, project, or keyword...">
             </div>
-        </section>
-
-        <div class="stats-bar">
-            <span>📋 <strong id="stat-total">–</strong> total entries</span>
-            <span>👤 <strong id="stat-consultants">–</strong> consultants</span>
-            <span>🏆 Top phase: <strong id="stat-top-phase">–</strong></span>
-        </div>
-
-        <div class="controls-row">
-            <span id="entry-count" class="entry-count">Loading...</span>
             <select id="consultant-filter" class="filter-control">
-                <option value="">👤 All Consultants</option>
+                <option value="">All Consultants</option>
             </select>
             <div class="date-filter">
-                <span class="filter-label">📅</span>
-                <input type="date" id="date-from" class="filter-date">
-                <span class="filter-label">→</span>
-                <input type="date" id="date-to" class="filter-date">
+                <input type="date" id="date-from" class="filter-date" aria-label="Date from">
+                <span class="filter-label">-></span>
+                <input type="date" id="date-to" class="filter-date" aria-label="Date to">
             </div>
             <select id="sort-select" class="sort-select">
-                <option value="newest">🕐 Newest first</option>
-                <option value="oldest">🕐 Oldest first</option>
-                <option value="equipment">A–Z Equipment</option>
-                <option value="project">A–Z Project</option>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="equipment">A-Z Equipment</option>
+                <option value="project">A-Z Project</option>
             </select>
         </div>
 
-        <section id="entries-grid" class="entries-grid">
-            <!-- Entries will be injected here by JavaScript -->
-            <div class="loader">
-                <div class="spinner"></div>
-                <p>Loading institutional knowledge...</p>
+        <div class="filters">
+            <span class="filter-label">Phase</span>
+            <button class="filter-tag" data-filter="URS" type="button">URS</button>
+            <button class="filter-tag" data-filter="FAT" type="button">FAT</button>
+            <button class="filter-tag" data-filter="SAT" type="button">SAT</button>
+            <button class="filter-tag" data-filter="IQ" type="button">IQ</button>
+            <button class="filter-tag" data-filter="OQ" type="button">OQ</button>
+            <button class="filter-tag" data-filter="PQ" type="button">PQ</button>
+            <button class="filter-tag" data-filter="Others" type="button">Others</button>
+            <span id="entry-count" class="entry-count">Loading...</span>
+        </div>
+
+        <div class="stats-bar">
+            <span><strong id="stat-total">-</strong> total entries</span>
+            <span class="divider"></span>
+            <span><strong id="stat-consultants">-</strong> consultants</span>
+            <span class="divider"></span>
+            <span>Top phase: <strong id="stat-top-phase">-</strong></span>
+        </div>
+    </section>
+
+    <main class="library-shell wide-container">
+        <section id="entries-grid" class="master-list" aria-label="Validation lessons">
+            <div class="loader">Loading institutional knowledge...</div>
+        </section>
+        <section id="detail-pane" class="detail-pane" aria-live="polite">
+            <div class="empty-state">
+                <span class="search-icon">Q</span>
+                <span>Select a lesson to view details</span>
             </div>
         </section>
     </main>
 
-    <!-- Modal for Adding New Entry -->
-    <div id="entry-modal" class="modal">
+    <div id="entry-modal" class="modal" aria-hidden="true">
         <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>Log Lesson Learned</h2>
-            <form id="entry-form">
+            <div class="modal-header">
+                <h2>Log Lesson Learned</h2>
+                <button class="close-modal icon-button" type="button" aria-label="Close">&times;</button>
+            </div>
+            <form id="entry-form" class="form-grid">
                 <div class="form-group">
                     <label for="project_name">Project Name</label>
                     <input type="text" id="project_name" required placeholder="e.g. Project Alpha - BioPharma">
@@ -97,14 +99,14 @@
                     <label for="consultant">Consultant Name</label>
                     <input type="text" id="consultant" required placeholder="e.g. John Doe">
                 </div>
-                <div class="form-row">
+                <div class="form-row three">
                     <div class="form-group">
-                        <label for="equipment_system">Equipment/System</label>
-                        <input type="text" id="equipment_system" required placeholder="e.g. Centrifuge C-102">
+                        <label for="equipment_system">Equipment / System</label>
+                        <input type="text" id="equipment_system" required placeholder="Centrifuge C-102">
                     </div>
                     <div class="form-group">
-                        <label for="model_number">Model Number (Optional)</label>
-                        <input type="text" id="model_number" placeholder="e.g. SN-12345 / Ver 2.0">
+                        <label for="model_number">Model Number</label>
+                        <input type="text" id="model_number" placeholder="SN-12345">
                     </div>
                     <div class="form-group">
                         <label for="validation_phase">Validation Phase</label>
@@ -115,7 +117,7 @@
                             <option value="IQ">IQ</option>
                             <option value="OQ">OQ</option>
                             <option value="PQ">PQ</option>
-                            <option value="Others">Other</option>
+                            <option value="Others">Others</option>
                         </select>
                     </div>
                 </div>
@@ -145,18 +147,10 @@
                     <label for="keywords">Keywords (comma separated)</label>
                     <input type="text" id="keywords" placeholder="vibration, logic, sensor">
                 </div>
-
                 <button type="submit" class="btn-submit">Submit to Knowledge Library</button>
             </form>
         </div>
     </div>
-
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>Copyright © 2025 ORKA Consulting Partners Pte Ltd. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script src="/static/script.js"></script>
 </body>

@@ -9,68 +9,68 @@
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="chat-page">
+    <div class="gold-hairline"></div>
     <nav class="navbar">
-        <div class="container">
-            <div class="logo">ORKA <span>Consulting Partners</span></div>
+        <div class="wide-container">
+            <a class="logo" href="/">
+                <strong>ORKA</strong>
+                <span>Consulting Partners</span>
+            </a>
             <div class="nav-links">
-                <a href="/" class="btn-secondary">📋 Knowledge Library</a>
+                <a href="/library" class="btn-secondary">Knowledge Library</a>
             </div>
         </div>
     </nav>
 
-    <main class="chat-layout container">
-
-        <!-- Left: Chat Panel -->
+    <main class="chat-layout wide-container">
         <section class="chat-panel">
             <div class="panel-header">
                 <h2>AI Assistant</h2>
-                <p>Ask about equipment validation, C&Q procedures, or past lessons learned.</p>
+                <p>Ask about equipment validation, C&amp;Q procedures, or past lessons learned.</p>
             </div>
 
             <div id="chat-messages" class="chat-messages">
                 <div class="ai-bubble">
                     <div class="bubble-icon">AI</div>
                     <div class="bubble-body">
-                        <p>Hi! I'm the ORKA AI Assistant. Ask me anything about pharmaceutical equipment commissioning and qualification — I'll search our knowledge base first, then fall back to general knowledge if needed.</p>
+                        <p>Hi! I'm the ORKA AI Assistant. Ask me anything about pharmaceutical equipment commissioning and qualification. I'll search our knowledge base first, then fall back to general knowledge if needed.</p>
                     </div>
                 </div>
             </div>
 
-            <form id="chat-form" class="chat-input-area ai-prompt" autocomplete="off">
-                <div class="ai-prompt-header">
-                    <div class="ai-prompt-title">
-                        <span class="model-mark" aria-hidden="true">AI</span>
-                        <span>ORKA AI ready</span>
+            <form id="chat-form" class="chat-input-area" autocomplete="off">
+                <div class="ai-prompt">
+                    <div class="ai-prompt-header">
+                        <div class="ai-prompt-title">
+                            <span class="model-mark" aria-hidden="true">AI</span>
+                            <span>ORKA AI ready</span>
+                        </div>
+                        <span class="ai-prompt-mode">Knowledge base first</span>
                     </div>
-                    <span class="ai-prompt-mode">Knowledge base first</span>
-                </div>
-
-                <div class="ai-prompt-box">
-                    <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
-                    <div class="ai-prompt-toolbar">
-                        <div class="prompt-tools">
+                    <div class="ai-prompt-box">
+                        <textarea id="chat-input" rows="1" placeholder="Ask about equipment validation, C&amp;Q issues, procedures..."></textarea>
+                        <div class="ai-prompt-toolbar">
                             <button type="button" id="attach-shortcut" class="tool-button" aria-label="Attach document">
                                 <svg viewBox="0 0 16 16" aria-hidden="true">
-                                    <path d="M6.4 11.6l5-5a2.6 2.6 0 0 0-3.7-3.7l-5 5a3.7 3.7 0 1 0 5.2 5.2l4.4-4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <path d="M6.4 11.6l5-5a2.6 2.6 0 0 0-3.7-3.7l-5 5a3.7 3.7 0 1 0 5.2 5.2l4.4-4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                                </svg>
+                            </button>
+                            <button type="submit" id="send-btn" class="btn-send" aria-label="Send message">
+                                <svg viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8 13V3M3 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </button>
                         </div>
-                        <button type="submit" id="send-btn" class="btn-send" aria-label="Send message">
-                            <svg viewBox="0 0 16 16" aria-hidden="true">
-                                <path d="M8 13V3M3 8l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
                     </div>
                 </div>
                 <p class="input-hint">Shift+Enter for new line</p>
             </form>
         </section>
 
-        <!-- Right: Upload Panel -->
         <aside class="upload-panel">
             <div class="panel-header">
                 <h2>Upload Document</h2>
@@ -83,7 +83,7 @@
                     <div class="file-drop-zone" id="drop-zone">
                         <input type="file" id="upload-file" accept=".pdf,.docx,.pptx" required>
                         <div class="drop-label" id="drop-label">
-                            <span class="drop-icon">📄</span>
+                            <span class="drop-icon">DOC</span>
                             <span>Click to browse or drag &amp; drop</span>
                         </div>
                     </div>
