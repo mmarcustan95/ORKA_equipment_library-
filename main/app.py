@@ -151,7 +151,7 @@ async def chat(request: ChatRequest):
                 ))
         
         system_prompt = """You are an internal assistant for ORKA Consulting Partners.
-        Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from.
+        Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from at the end of the entire response.
         If the context does not contain relevant information, respond using EXACTLY this format:
 
         No relevant entries exist from ORKA knowledge base. [no relevant entries]
