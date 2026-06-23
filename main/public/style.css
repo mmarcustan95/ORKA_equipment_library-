@@ -72,7 +72,7 @@ button {
 }
 
 .wide-container {
-    width: min(100%, 1400px);
+    width: min(100%, calc(50vw + 700px));
     margin: 0 auto;
     padding: 0 16px;
 }
