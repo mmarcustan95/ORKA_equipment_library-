@@ -123,6 +123,9 @@ function renderEntries(entries) {
 
     const selected = entries.find(e => String(e.id) === String(selectedId));
     renderDetail(selected || null);
+
+    const selectedItem = grid.querySelector('.master-item.selected');
+    if (selectedItem) moveSlideIndicator(selectedItem);
 }
 
 function renderModelNumber(modelNumber) {
@@ -195,7 +198,28 @@ function renderDetail(entry) {
 
 function selectEntry(id) {
     selectedId = String(id);
-    applyFilters(false);
+
+    const newItem = grid.querySelector(`.master-item[data-id="${id}"]`);
+    if (newItem) {
+        grid.querySelectorAll('.master-item.selected').forEach(el => el.classList.remove('selected'));
+        newItem.classList.add('selected');
+        moveSlideIndicator(newItem);
+        const entry = allEntries.find(e => String(e.id) === String(selectedId));
+        renderDetail(entry || null);
+    } else {
+        applyFilters(false);
+    }
+}
+
+function moveSlideIndicator(item) {
+    let indicator = grid.querySelector('.master-slide-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'master-slide-indicator';
+        grid.prepend(indicator);
+    }
+    indicator.style.height = item.offsetHeight + 'px';
+    indicator.style.transform = `translateY(${item.offsetTop}px)`;
 }
 
 function filterByKeyword(kw) {

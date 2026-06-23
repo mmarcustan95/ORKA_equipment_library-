@@ -659,6 +659,18 @@ textarea:focus,
 .master-list {
     border-right: 1px solid var(--border-subtle);
     padding: 8px 0;
+    position: relative;
+}
+
+.master-slide-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--navy-700);
+    border-left: 3px solid var(--gold-500);
+    pointer-events: none;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s ease;
+    z-index: 0;
 }
 
 .detail-pane {
@@ -670,16 +682,18 @@ textarea:focus,
     border-left: 3px solid transparent;
     border-bottom: 1px solid var(--border-subtle);
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    z-index: 1;
+    transition: background 0.15s ease;
 }
 
-.master-item:hover,
-.master-item.selected {
+.master-item:hover:not(.selected) {
     background: var(--navy-700);
 }
 
 .master-item.selected {
-    border-left-color: var(--gold-500);
+    background: transparent;
+    border-left-color: transparent;
 }
 
 .master-top {
@@ -1010,7 +1024,6 @@ label {
     min-height: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    max-width: 1040px;
     padding-top: 24px;
     padding-bottom: 24px;
 }
