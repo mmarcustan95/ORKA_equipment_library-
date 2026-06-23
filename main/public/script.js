@@ -218,8 +218,9 @@ function moveSlideIndicator(item) {
         indicator.className = 'master-slide-indicator';
         grid.prepend(indicator);
     }
+    const top = item.getBoundingClientRect().top - grid.getBoundingClientRect().top + grid.scrollTop;
     indicator.style.height = item.offsetHeight + 'px';
-    indicator.style.transform = `translateY(${item.offsetTop}px)`;
+    indicator.style.transform = `translateY(${top}px)`;
 }
 
 function filterByKeyword(kw) {
