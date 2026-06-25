@@ -5,6 +5,10 @@ The **Equipment Validation Knowledge API** is a lightweight, custom backend desi
 
 This project utilizes a "headless" database architecture, leveraging existing Microsoft 365 infrastructure to ensure zero additional storage costs while maintaining strict corporate security.
 
+## Developer Documentation
+
+For a plain-English walkthrough of the full codebase, see [`DEVELOPER_DOCS.md`](DEVELOPER_DOCS.md). It explains the frontend, backend, database, document upload flow, and AI retrieval pipeline for consultants with no coding background.
+
 ## Key Features
 
 ### Knowledge Library
