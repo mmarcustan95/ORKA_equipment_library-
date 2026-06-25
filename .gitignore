@@ -29,6 +29,7 @@ coverage.xml
 *.cover
 *.py,cover
 .hypothesis/
+ingest_asme_bpe.py
 
 #one time scripts
 backfill_embeddings.py

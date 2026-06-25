@@ -19,7 +19,8 @@ import os
 import logging
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 from main.models import ValidationEntry
 from main.models import ChatRequest, ChatResponse, ChatSources
 from main.local_db import test_db
@@ -27,6 +28,7 @@ from main.vector_embed import VectorEmbedder
 from main.vector_embed import embed_text
 from main.ingest_document import ingest_document, SUPPORTED_TYPES
 from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 from google import genai
 from google.genai import types
 
@@ -34,10 +36,20 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ORKA Equipment Knowledge Library")
 
+MAX_UPLOAD_FILES = int(os.getenv("MAX_UPLOAD_FILES", "8"))
+MAX_UPLOAD_FILE_BYTES = int(os.getenv("MAX_UPLOAD_FILE_MB", "15")) * 1024 * 1024
+MAX_UPLOAD_BATCH_BYTES = int(os.getenv("MAX_UPLOAD_BATCH_MB", "60")) * 1024 * 1024
+
 
 @app.get("/")
 async def root():
-    """Serve the main frontend dashboard (index.html)."""
+    """Serve the landing page."""
+    return FileResponse("main/public/landing.html")
+
+
+@app.get("/library")
+async def library_page():
+    """Serve the equipment library dashboard."""
     return FileResponse("main/public/index.html")
 
 
@@ -86,6 +98,21 @@ async def create_entry(entry: ValidationEntry):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.put("/entries/{entry_id}", response_model=ValidationEntry, tags=["Entries"])
+async def update_entry(entry_id: str, entry: ValidationEntry):
+    """Update an existing validation lesson."""
+    try:
+        updated = test_db.update_entry(entry_id, entry)
+        try:
+            embedding = VectorEmbedder(entry).embed()
+            test_db.update_embedding(entry_id, embedding)
+        except Exception as embed_err:
+            logger.warning("Embedding update failed for entry %s: %s", entry_id, embed_err)
+        return updated.copy(update={"id": UUID(entry_id)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(request: ChatRequest):
     """
@@ -96,93 +123,185 @@ async def chat(request: ChatRequest):
     Stage 4: call LLM
     """
     try:
-        # Stage 1
-        queryvector = embed_text(request.query)
-
-        # Stage 2 — search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
-        entry_results = test_db.search_entries(queryvector)
-        doc_results = test_db.search_documents(queryvector)
-
-        # Stage 3 — build context and sources from both tiers
-        context = ''
-        sources = []
-
-        for row in entry_results:
-            context += f"\n[ORKA Entry: {row['equipment_system']} | {row['validation_phase']}]\nID: {row['id']}\nObstacle: {row['obstacle']}\nResolution: {row['resolution']}\n---"
-            sources.append(ChatSources(
-                source_id=str(row["id"]),
-                equipment_system=row["equipment_system"],
-                phase=row["validation_phase"],
-                source_type="entry"
-            ))
-
-        seen_docs = set()
-        for row in doc_results:
-            context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
-            if row["filename"] not in seen_docs:
-                seen_docs.add(row["filename"])
-                sources.append(ChatSources(
-                    source_id=str(row["id"]),
-                    equipment_system=row["equipment_tag"] or row["filename"],
-                    phase="N/A",
-                    source_type="document"
-                ))
-        
-        system_prompt = """You are an internal assistant for ORKA Consulting Partners.
-        Answer ONLY using the context entries provided. For every fact you state, cite the Entry ID it came from.
-        If the context does not contain relevant information, respond using EXACTLY this format:
-
-        No relevant entries exist from ORKA knowledge base. [no relevant entries]
-
-        I will proceed to answer from my own AI general knowledge:
-
-        [your answer here]
-
-        Do not deviate from this format when falling back to general knowledge."""
-
-        full_prompt = f"{system_prompt}\n\nContext Entries:\n{context}\n\nUser Query: {request.query}"
-
-        # Stage 4
-        _client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        response = _client.models.generate_content(model='gemini-2.5-flash',contents=full_prompt)
-
-        return ChatResponse(answer=response.text, sources=sources)
-
+        return await run_in_threadpool(generate_chat_response, request.query)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def generate_chat_response(query: str) -> ChatResponse:
+    """
+    Build a chat response using blocking SDK/database calls.
+
+    This runs in a worker thread so long document ingestion requests do not
+    monopolize the FastAPI event loop and delay chat responses.
+    """
+    # Stage 1
+    queryvector = embed_text(query)
+
+    # Stage 2 - search Tier 1 (lessons learned) and Tier 2 (uploaded manuals)
+    entry_results = test_db.search_entries(queryvector)
+    doc_results = test_db.search_documents(queryvector)
+
+    # Stage 3 - build context and sources from both tiers
+    context = ''
+    sources = []
+
+    for row in entry_results:
+        context += f"\n[ORKA Entry: {row['equipment_system']} | {row['validation_phase']}]\nID: {row['id']}\nObstacle: {row['obstacle']}\nResolution: {row['resolution']}\n---"
+        sources.append(ChatSources(
+            source_id=str(row["id"]),
+            equipment_system=row["equipment_system"],
+            phase=row["validation_phase"],
+            source_type="entry"
+        ))
+
+    seen_docs = set()
+    for row in doc_results:
+        context += f"\n[Manual: {row['filename']}, chunk {row['chunk_index']}]\nEquipment Tag: {row['equipment_tag']}\nContent: {row['content_chunk']}\n---"
+        if row["filename"] not in seen_docs:
+            seen_docs.add(row["filename"])
+            sources.append(ChatSources(
+                source_id=str(row["id"]),
+                equipment_system=row["filename"] or row["equipment_tag"],
+                phase="N/A",
+                source_type="document"
+            ))
+    
+    system_prompt = """You are an internal assistant for ORKA Consulting Partners.
+    Answer ONLY using the context entries provided. For facts from ORKA entries, cite the Entry ID. For facts from uploaded manuals/documents, cite the document filename.
+    If the context does not contain relevant information, respond using EXACTLY this format:
+
+    No relevant entries exist from ORKA knowledge base. [no relevant entries]
+
+    I will proceed to answer from my own AI general knowledge:
+
+    [your answer here]
+
+    Do not deviate from this format when falling back to general knowledge."""
+
+    full_prompt = f"{system_prompt}\n\nContext Entries:\n{context}\n\nUser Query: {query}"
+
+    # Stage 4
+    _client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    response = _client.models.generate_content(model='gemini-2.5-flash',contents=full_prompt)
+
+    return ChatResponse(answer=response.text, sources=sources)
 
 
 
 @app.post("/documents/upload", tags=["Documents"])
 async def upload_document(
-    file: UploadFile = File(...),
     equipment_tag: str = Form(...),
     uploaded_by: str = Form(...),
+    files: List[UploadFile] = File(default=[]),
+    file: Optional[UploadFile] = File(default=None),
 ):
     """
-    Upload a PDF equipment manual or troubleshooting guide.
-    Extracts text, chunks it, generates embeddings, and stores all chunks
-    in the documents table for retrieval by the /chat endpoint.
+    Upload one file or a folder/multiple files of equipment documents.
+    Supported files are extracted, chunked, embedded, and stored in the
+    documents table for retrieval by the /chat endpoint.
     """
-    ext = "." + file.filename.lower().rsplit(".", 1)[-1]
-    if ext not in SUPPORTED_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Accepted: {', '.join(SUPPORTED_TYPES)}")
+    uploads = list(files)
+    if file is not None:
+        uploads.append(file)
+
+    deduped_uploads = []
+    seen_uploads = set()
+    for upload in uploads:
+        key = upload.filename or id(upload.file)
+        if key in seen_uploads:
+            continue
+        seen_uploads.add(key)
+        deduped_uploads.append(upload)
+    uploads = deduped_uploads
+    if not uploads:
+        raise HTTPException(status_code=400, detail="No files uploaded.")
+    if len(uploads) > MAX_UPLOAD_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Too many files. Upload at most {MAX_UPLOAD_FILES} files per batch.",
+        )
 
     try:
-        file_bytes = await file.read()
-        result = ingest_document(
-            filename=file.filename,
-            file_bytes=file_bytes,
-            equipment_tag=equipment_tag,
-            uploaded_by=uploaded_by,
-        )
-        if result["status"] == "skipped":
-            raise HTTPException(status_code=422, detail=result["reason"])
-        return result
+        results = []
+        batch_bytes = 0
+        for upload in uploads:
+            filename = upload.filename or "unnamed"
+            ext = "." + filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+            if ext not in SUPPORTED_TYPES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"Unsupported file type: {ext or 'none'}",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                await upload.close()
+                continue
+
+            file_size = get_upload_size(upload)
+            if file_size > MAX_UPLOAD_FILE_BYTES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"File exceeds {MAX_UPLOAD_FILE_BYTES // (1024 * 1024)} MB limit",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                await upload.close()
+                continue
+            if batch_bytes + file_size > MAX_UPLOAD_BATCH_BYTES:
+                results.append({
+                    "filename": filename,
+                    "status": "skipped",
+                    "reason": f"Batch exceeds {MAX_UPLOAD_BATCH_BYTES // (1024 * 1024)} MB limit",
+                    "chunks_stored": 0,
+                    "chunks_failed": 0,
+                })
+                await upload.close()
+                continue
+
+            try:
+                batch_bytes += file_size
+                upload.file.seek(0)
+                results.append(await run_in_threadpool(
+                    ingest_document,
+                    filename=filename,
+                    file_obj=upload.file,
+                    equipment_tag=equipment_tag,
+                    uploaded_by=uploaded_by,
+                ))
+            finally:
+                await upload.close()
+
+        processed = sum(1 for result in results if result.get("status") == "complete")
+        skipped = len(results) - processed
+        chunks_stored = sum(result.get("chunks_stored", 0) for result in results)
+        chunks_failed = sum(result.get("chunks_failed", 0) for result in results)
+
+        return {
+            "status": "complete" if skipped == 0 else "partial" if processed else "skipped",
+            "files_received": len(results),
+            "files_processed": processed,
+            "files_skipped": skipped,
+            "chunks_stored": chunks_stored,
+            "chunks_failed": chunks_failed,
+            "accepted_extensions": sorted(SUPPORTED_TYPES),
+            "results": results,
+        }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def get_upload_size(upload: UploadFile) -> int:
+    """Return UploadFile size without reading it into memory."""
+    current = upload.file.tell()
+    upload.file.seek(0, os.SEEK_END)
+    size = upload.file.tell()
+    upload.file.seek(current)
+    return size
 
 
 @app.delete("/entries/{entry_id}", tags=["Entries"])

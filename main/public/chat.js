@@ -4,13 +4,6 @@ const chatInput  = document.getElementById('chat-input');
 const sendBtn    = document.getElementById('send-btn');
 const attachShortcut = document.getElementById('attach-shortcut');
 
-const uploadForm   = document.getElementById('upload-form');
-const uploadFile   = document.getElementById('upload-file');
-const dropZone     = document.getElementById('drop-zone');
-const dropLabel    = document.getElementById('drop-label');
-const uploadBtn    = document.getElementById('upload-btn');
-const uploadStatus = document.getElementById('upload-status');
-
 let isSubmitting = false;
 
 // Auto-grow textarea up to ~5 lines
@@ -116,7 +109,7 @@ function buildSourcesHtml(sources) {
     const entries  = sources.filter(s => s.source_type === 'entry');
     const docs     = sources.filter(s => s.source_type === 'document');
 
-    let html = '<div class="sources-block"><button class="sources-toggle" onclick="toggleSources(this)">📚 Sources (' + sources.length + ')</button><div class="sources-list">';
+    let html = '<div class="sources-block"><button class="sources-toggle" onclick="toggleSources(this)">Sources (' + sources.length + ')</button><div class="sources-list">';
 
     if (entries.length > 0) {
         html += `<p class="source-group-label">ORKA Knowledge Base</p>`;
@@ -146,7 +139,7 @@ function buildSourcesHtml(sources) {
 function toggleSources(btn) {
     const list = btn.nextElementSibling;
     const isOpen = list.classList.toggle('open');
-    btn.textContent = btn.textContent.replace(isOpen ? '▶' : '▼', isOpen ? '▼' : '▶');
+    btn.textContent = btn.textContent;
 }
 
 function formatAnswer(text) {
@@ -228,75 +221,7 @@ function updateSendState() {
 }
 
 attachShortcut.addEventListener('click', () => {
-    uploadFile.click();
+    window.location.href = '/library#document-upload';
 });
 
 updateSendState();
-
-// ── Upload ────────────────────────────────────────────────────────────────────
-
-uploadFile.addEventListener('change', () => {
-    const f = uploadFile.files[0];
-    if (f) {
-        dropLabel.innerHTML = `<span class="drop-icon">✅</span><span>${escapeHtml(f.name)}</span>`;
-    }
-});
-
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-});
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) {
-        const dt = new DataTransfer();
-        dt.items.add(f);
-        uploadFile.files = dt.files;
-        dropLabel.innerHTML = `<span class="drop-icon">✅</span><span>${escapeHtml(f.name)}</span>`;
-    }
-});
-
-uploadForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const file       = uploadFile.files[0];
-    const tag        = document.getElementById('equipment-tag').value.trim();
-    const uploadedBy = document.getElementById('uploaded-by').value.trim();
-
-    if (!file || !tag || !uploadedBy) return;
-
-    setUploadStatus('loading', '⏳ Processing document...');
-    uploadBtn.disabled = true;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('equipment_tag', tag);
-    formData.append('uploaded_by', uploadedBy);
-
-    try {
-        const res = await fetch('/documents/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-
-        if (!res.ok) {
-            setUploadStatus('error', `❌ ${data.detail || 'Upload failed.'}`);
-        } else {
-            setUploadStatus('success',
-                `✅ <strong>${escapeHtml(data.filename)}</strong> ingested — ${data.chunks_stored} chunks stored.`
-            );
-            uploadForm.reset();
-            dropLabel.innerHTML = `<span class="drop-icon">📄</span><span>Click to browse or drag &amp; drop</span>`;
-        }
-    } catch (err) {
-        setUploadStatus('error', '❌ Upload failed. Check that the server is running.');
-        console.error(err);
-    } finally {
-        uploadBtn.disabled = false;
-    }
-});
-
-function setUploadStatus(type, html) {
-    uploadStatus.className = `upload-status upload-status--${type}`;
-    uploadStatus.innerHTML = html;
-}
