@@ -313,7 +313,7 @@ class LocalDatabase:
         finally:
             conn.close()
 
-    def search_documents(self, queryvector, top_k=5):
+    def search_documents(self, queryvector, top_k=12):
         """Search document chunks by vector similarity. Requires Supabase (pgvector) — not supported on SQLite."""
         if not self.db_url:
             raise RuntimeError("search_documents requires a PostgreSQL/Supabase connection. Set DATABASE_URL in your environment.")
@@ -331,7 +331,7 @@ class LocalDatabase:
         finally:
             conn.close()
 
-    def search_entries(self, queryvector, top_k=5):
+    def search_entries(self, queryvector, top_k=12):
         """Search entries by vector similarity. Requires Supabase (pgvector) — not supported on SQLite."""
         if not self.db_url:
             raise RuntimeError("search_entries requires a PostgreSQL/Supabase connection. Set DATABASE_URL in your environment.")
