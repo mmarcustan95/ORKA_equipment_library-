@@ -16,7 +16,7 @@ import sqlite3
 import json
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Sequence
 from dotenv import load_dotenv
 from .models import ValidationEntry
 
@@ -322,11 +322,58 @@ class LocalDatabase:
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)  # type: ignore
             cur.execute("""
-                SELECT id, filename, file_type, content_chunk, chunk_index, equipment_tag
+                SELECT
+                    id,
+                    filename,
+                    file_type,
+                    content_chunk,
+                    chunk_index,
+                    equipment_tag,
+                    embedding <=> %s::vector AS distance,
+                    1 - (embedding <=> %s::vector) AS similarity
                 FROM documents
+                WHERE embedding IS NOT NULL
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
-            """, (queryvector, top_k))
+            """, (queryvector, queryvector, queryvector, top_k))
+            return cur.fetchall()
+        finally:
+            conn.close()
+
+    def search_documents_by_terms(self, terms: Sequence[str], top_k=8):
+        """Search document chunks by text as a fallback for titles, tags, and acronyms."""
+        if not self.db_url:
+            raise RuntimeError("search_documents_by_terms requires a PostgreSQL/Supabase connection. Set DATABASE_URL in your environment.")
+
+        clean_terms = [term.strip() for term in terms if term and term.strip()]
+        if not clean_terms:
+            return []
+
+        clauses = []
+        params = []
+        for term in clean_terms:
+            pattern = f"%{term}%"
+            clauses.append("(content_chunk ILIKE %s OR filename ILIKE %s OR equipment_tag ILIKE %s)")
+            params.extend([pattern, pattern, pattern])
+
+        conn = self._get_connection()
+        try:
+            cur = conn.cursor(cursor_factory=RealDictCursor)  # type: ignore
+            cur.execute(f"""
+                SELECT
+                    id,
+                    filename,
+                    file_type,
+                    content_chunk,
+                    chunk_index,
+                    equipment_tag,
+                    NULL::double precision AS distance,
+                    NULL::double precision AS similarity
+                FROM documents
+                WHERE {' OR '.join(clauses)}
+                ORDER BY filename, chunk_index
+                LIMIT %s
+            """, (*params, top_k))
             return cur.fetchall()
         finally:
             conn.close()
@@ -340,11 +387,19 @@ class LocalDatabase:
         try:
             cur = conn.cursor(cursor_factory=RealDictCursor)  # type: ignore
             cur.execute("""
-                SELECT id, equipment_system, validation_phase, obstacle, resolution
+                SELECT
+                    id,
+                    equipment_system,
+                    validation_phase,
+                    obstacle,
+                    resolution,
+                    embedding <=> %s::vector AS distance,
+                    1 - (embedding <=> %s::vector) AS similarity
                 FROM entries
+                WHERE embedding IS NOT NULL
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
-            """, (queryvector, top_k))
+            """, (queryvector, queryvector, queryvector, top_k))
             return cur.fetchall()
         finally:
             conn.close()
