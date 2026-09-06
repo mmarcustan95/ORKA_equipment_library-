@@ -51,7 +51,7 @@ def extract_text_pdf(file_obj) -> str:
 
 
 def extract_text_docx(file_obj) -> str:
-    """Extract text from a Word document paragraph by paragraph."""
+    """Extract text from a Word document paragraph by paragraph. hello"""
     _seek_start(file_obj)
     doc = DocxDocument(file_obj)
     text_parts = []
