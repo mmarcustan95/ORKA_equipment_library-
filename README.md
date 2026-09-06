@@ -20,7 +20,7 @@ For a plain-English walkthrough of the full codebase, see [`DEVELOPER_DOCS.md`](
 *   **SharePoint Integration:** Direct link to the team's shared file system for quick reference to original documentation.
 *   **Premium Aesthetics:** Dark-mode optimized design with smooth transitions, modern typography, and intuitive icons.
 
-### AI Assistant (`/chat`)
+### AI Assistant
 *   **Conversational Chat UI:** A Claude-inspired chat interface — AI responses render inline next to a branded avatar with no card boxing, and user messages appear as right-aligned pill bubbles.
 *   **Sticky Full-Height Chat Panel:** The chat panel is viewport-height and stays fixed while the upload panel scrolls alongside it.
 *   **Markdown Rendering:** AI responses support bullet lists, numbered lists, bold text, inline code, fenced code blocks, and headings.
