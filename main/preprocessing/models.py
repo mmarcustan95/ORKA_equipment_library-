@@ -8,12 +8,7 @@ equipment involved, what went wrong during validation, and how it was resolved.
 This model is used by the API layer (app.py), the database layer (local_db.py),
 and the AI embedding layer (vector_embed.py).
 """
-
 from pydantic import BaseModel, Field
-from datetime import date
-from typing import List, Optional
-from uuid import uuid4, UUID
-
 
 class ValidationEntry(BaseModel):
     """
@@ -34,9 +29,7 @@ class ValidationEntry(BaseModel):
     attachments     : Optional file path or URL pointing to supporting documents.
     keywords        : List of tags for search and categorisation (e.g. ["HVAC", "PID", "ISO 7"]).
     """
-
-    # Auto-generates a unique UUID if no id is provided on creation
-    id: UUID = Field(default_factory=uuid4)
+    id: UUID = Field(default_factory = uuid4)
     project_name: str
     equipment_system: str
     model_number: Optional[str] = None
@@ -44,41 +37,30 @@ class ValidationEntry(BaseModel):
     consultant: str
     intended_outcome: str
     obstacle: str
-    resolution: str
-    date_logged: date
+    resolution: str | None = None
+    date_logged: str
     attachments: Optional[str] = ""
-    keywords: List[str] = []
-
-    class Config:
-        # Allows Pydantic to read data from ORM/database row objects as well as plain dicts
-        from_attributes = True
+    keywords: list[str] = []
 
 class ChatRequest(BaseModel):
-    """
-    Represents a chat request for the ORKA Equipment Knowledge Library.
-
-    Fields
-    ------
-    query: The user's question or prompt to the AI chat system.
-    context_entries: Optional list of ValidationEntry objects to provide context for the AI response.
-    """
-
-    query: str
+    req: str
 
 class ChatSources(BaseModel):
-    """
-    Represents the sources used to generate a chat response.
 
+    """ 
+    Represents the model used to generate a source
+    
     Fields
-    ------
-    source_id: The unique identifier of the source entry.
-    source_text: The text content of the source entry.
+    ---
+    src_id: UUID of the source info
+    equipment_system: system name
+    source type: type of source quoted, entry/documents
+    phase: validation phase
     """
-
-    source_id: str
+    src_id: str
     equipment_system: str
+    source_type: str
     phase: str
-    source_type: str  # "entry" or "document"
 
 class ChatResponse(BaseModel):
     """
